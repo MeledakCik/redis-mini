@@ -1,36 +1,42 @@
-# Dockerfile — Mini Upstash Pro
+FROM node:20-alpine AS builder
 
-# ---- Stage 1: builder ----
-FROM node:18-alpine AS builder
 WORKDIR /app
 
-# WAJIB: biar build gak throw AUTH_SECRET
-ARG AUTH_SECRET
-ARG AUTH_URL
-ENV AUTH_SECRET=${AUTH_SECRET:-dummy-build-secret-for-railway-build-only-123456}
-ENV AUTH_URL=${AUTH_URL:-http://localhost:3000}
-ENV NEXT_TELEMETRY_DISABLED=1
+# Copy package files
+COPY package*.json ./
 
-COPY package.json package-lock.json* ./
+# Install dependencies
 RUN npm ci
 
+# Copy source code
 COPY . .
+
+# Build Next.js application
 RUN npm run build
 
-# ---- Stage 2: runner ----
-FROM node:18-alpine AS runner
+# Production stage
+FROM node:20-alpine
+
 WORKDIR /app
 
-ENV NODE_ENV=production
-ENV HOSTNAME="0.0.0.0"
-ENV PORT=8080
-ENV DATA_DIR=/app/data
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
 
-RUN mkdir -p /app/data
-
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+# Copy built application from builder
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/node_modules ./node_modules
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
+
+USER nextjs
 
 EXPOSE 3000
-CMD ["node", "server.js"]
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+
+CMD ["dumb-init", "node_modules/.bin/next", "start"]
