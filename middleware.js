@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const PROTECTED_PAGES = ["/databases", "/vector", "/billing"];
+const PROTECTED_PAGES = ["/databases", "/vector", "/billing", "/connect"];
 
 export function middleware(req) {
   const { pathname } = req.nextUrl;

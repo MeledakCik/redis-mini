@@ -12,7 +12,7 @@ const menu = [
   { label: "QStash", icon: Zap, href: "#", disabled: true },
   { label: "Usage", icon: BarChart3, href: "#", disabled: true },
   { label: "Billing", icon: CreditCard, href: "/billing" },
-  { label: "API Keys", icon: KeyRound, href: "#", disabled: true },
+  { label: "API Keys", icon: KeyRound, href: "/connect" },
 ];
 
 export function Sidebar() {
