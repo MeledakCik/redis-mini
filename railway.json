@@ -7,7 +7,7 @@
   "deploy": {
     "healthcheckPath": "/",
     "healthcheckTimeout": 100,
-    "restartPolicyType": "onFailure",
+    "restartPolicyType": "on_failure",
     "restartPolicyMaxRetries": 10
   }
 }
