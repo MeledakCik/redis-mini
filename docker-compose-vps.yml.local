@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  # Container Aplikasi Utama (Next.js)
+  app:
+    build: .
+    container_name: mini-upstash-app
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      # WAJIB: Supaya dockerode di dalam container bisa spawn container Qdrant/Redis di host VPS
+      - /var/run/docker.sock:/var/run/docker.sock
+      # WAJIB: Biar data user & instance tidak hilang saat container Next.js direstart
+      - ./instances.json:/app/instances.json
+      - ./vector-instances.json:/app/vector-instances.json
+      - ./users.json:/app/users.json
+    environment:
+      - NODE_ENV=production
+      - NEXTAUTH_SECRET=rahasia_super_aman_cikawan
+
+  # Shared Qdrant (Opsional, seperti catatan file kamu)
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: mini-upstash-qdrant
+    restart: always
+    ports:
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    labels:
+      app: mini-upstash-vector
+
+volumes:
+  qdrant_storage:
+    name: qdrant_storage

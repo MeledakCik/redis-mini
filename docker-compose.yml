@@ -1,0 +1,57 @@
+# docker-compose.yml — Mini Upstash Pro (VPS Ubuntu deployment)
+#
+# Jalanin app-nya sendiri (mode docker: spawn container redis:7-alpine per database lewat
+# lib/infra.js -> DockerProvider, sibling ke Docker daemon host) + Qdrant untuk vector DB.
+#
+# PENTING kenapa network_mode: host dipakai untuk service "app":
+#   DockerProvider (baik untuk Redis per-instance maupun Qdrant) selalu bind port container
+#   ke 127.0.0.1 di HOST Docker (lihat lib/infra.js), bukan ke alamat internal compose
+#   network. Kalau app dijalanin dalam network compose biasa (bridge), "127.0.0.1" di dalam
+#   container app itu BUKAN host — jadi gak akan bisa nyambung ke Redis/Qdrant yang di-spawn
+#   sendiri. Host networking bikin app "melihat" 127.0.0.1 persis seperti kalau dijalankan
+#   langsung `npm run dev` di host, jadi kompatibel apa adanya dengan asumsi 127.0.0.1 di
+#   seluruh codebase (redis-pool.js, lib/infra.js DockerProvider, lib/qdrant.js).
+#
+# PENTING: /var/run/docker.sock di-mount supaya app bisa spawn container Redis SIBLING di
+# host Docker yang sama (Docker-out-of-Docker, bukan Docker-in-Docker).
+#
+# Jalankan: DATA_DIR=./data docker compose up -d --build
+
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mini-upstash-app
+    restart: always
+    network_mode: host
+    environment:
+      NODE_ENV: production
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-docker}
+      DATA_DIR: /app/data
+      ALLOW_EXTERNAL_REDIS: ${ALLOW_EXTERNAL_REDIS:-false}
+    volumes:
+      - ${DATA_DIR:-./data}:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - qdrant
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: mini-upstash-qdrant
+    restart: always
+    ports:
+      - "127.0.0.1:6333:6333" # REST API
+      - "127.0.0.1:6334:6334" # gRPC
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    labels:
+      app: mini-upstash-vector
+
+volumes:
+  qdrant_storage:
+    name: qdrant_storage

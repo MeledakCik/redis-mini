@@ -1,0 +1,44 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  darkMode: ["class"],
+  content: [
+    "./app/**/*.{js,jsx}",
+    "./components/**/*.{js,jsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        bg: "#0a0a0a",
+        card: "#141414",
+        card2: "#171717",
+        border: "#262626",
+        accent: {
+          DEFAULT: "#00e095",
+          dark: "#00c17f",
+        },
+        muted: "#8a8a8a",
+      },
+      fontFamily: {
+        sans: ["Inter", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"],
+      },
+      boxShadow: {
+        soft: "0 1px 2px rgba(0,0,0,0.4)",
+        card: "0 1px 3px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03)",
+      },
+      borderRadius: {
+        xl: "0.85rem",
+      },
+      keyframes: {
+        pulseGlow: {
+          "0%, 100%": { opacity: 1 },
+          "50%": { opacity: 0.4 },
+        },
+      },
+      animation: {
+        pulseGlow: "pulseGlow 2s ease-in-out infinite",
+      },
+    },
+  },
+  plugins: [],
+};

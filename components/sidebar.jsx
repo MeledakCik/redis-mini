@@ -1,0 +1,79 @@
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
+import { Database, Boxes, Zap, BarChart3, CreditCard, KeyRound, LogOut } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const menu = [
+  { label: "Databases", icon: Database, href: "/databases", active: true },
+  { label: "Redis", icon: Boxes, href: "/databases", sub: true },
+  { label: "Vector", icon: Zap, href: "/vector" },
+  { label: "QStash", icon: Zap, href: "#", disabled: true },
+  { label: "Usage", icon: BarChart3, href: "#", disabled: true },
+  { label: "Billing", icon: CreditCard, href: "/billing" },
+  { label: "API Keys", icon: KeyRound, href: "#", disabled: true },
+];
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const { data: session } = useSession();
+
+  return (
+    <aside className="w-56 shrink-0 border-r border-border bg-bg h-screen sticky top-0 flex flex-col">
+      <div className="h-14 flex items-center gap-2 px-4 border-b border-border">
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent to-emerald-600 flex items-center justify-center font-bold text-black text-sm">
+          M
+        </div>
+        <span className="font-semibold text-sm tracking-tight text-zinc-100">mini-upstash</span>
+      </div>
+
+      <nav className="flex-1 py-3 px-2 space-y-0.5">
+        {menu.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname?.startsWith(item.href) && !item.disabled;
+          return (
+            <Link
+              key={item.label}
+              href={item.disabled ? "#" : item.href}
+              className={cn(
+                "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors",
+                item.sub && "ml-3 text-xs",
+                isActive
+                  ? "bg-accent/10 text-accent font-medium"
+                  : item.disabled
+                  ? "text-zinc-600 cursor-not-allowed"
+                  : "text-zinc-400 hover:text-zinc-100 hover:bg-white/5"
+              )}
+              onClick={(e) => item.disabled && e.preventDefault()}
+            >
+              <Icon size={15} />
+              {item.label}
+              {item.disabled && (
+                <span className="ml-auto text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-600">soon</span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="border-t border-border">
+        {session?.user?.email && (
+          <div className="px-3 pt-3 pb-1.5 flex items-center justify-between gap-2">
+            <span className="text-[11px] text-zinc-400 truncate" title={session.user.email}>
+              {session.user.email}
+            </span>
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="shrink-0 text-zinc-500 hover:text-red-400 transition-colors"
+              title="Logout"
+            >
+              <LogOut size={13} />
+            </button>
+          </div>
+        )}
+        <div className="px-3 pb-3 pt-1 text-[11px] text-zinc-600">Mini Upstash · Local Docker Edition</div>
+      </div>
+    </aside>
+  );
+}
