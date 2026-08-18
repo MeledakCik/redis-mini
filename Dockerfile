@@ -22,8 +22,8 @@ FROM node:18-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV HOSTNAME=0.0.0.0
-ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+ENV PORT=8080
 ENV DATA_DIR=/app/data
 
 RUN mkdir -p /app/data
