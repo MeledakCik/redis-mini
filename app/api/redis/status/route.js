@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { NextResponse } from "next/server";
 import { requireUser, authErrorResponse } from "@/lib/auth-guard";
 import { getTenantByOwnerId, buildPublicRedisUrl } from "@/lib/tenant";
