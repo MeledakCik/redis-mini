@@ -4,7 +4,7 @@ import { Globe } from "lucide-react";
 
 export function RestApiPanel({ instance }) {
   if (!instance) return null;
-  const restUrl = `http://127.0.0.1:3000/api/redis/${instance.id}/exec`;
+  const restUrl = `${typeof window !== "undefined" ? window.location.origin : "https://your-app.example.com"}/api/redis/${instance.id}/exec`;
   const token = instance.password;
 
   const curlExample = `curl -X POST ${restUrl} \\
@@ -33,11 +33,13 @@ console.log(data.result);`;
         </CardHeader>
         <CardContent>
           <p className="text-xs text-zinc-500 mb-2 leading-relaxed">
-            Endpoint lokal ini menerima command Redis dalam format string mentah, mirip REST API Upstash asli.
-            Cocok buat dipanggil dari edge function / serverless yang gak support koneksi TCP langsung ke Redis.
+            Endpoint ini menerima command Redis dalam format string mentah lewat HTTPS. Cocok
+            dipanggil dari edge function / serverless yang tidak mendukung koneksi TCP langsung
+            ke Redis.
           </p>
-          <p className="text-[11px] text-yellow-500/80 mb-4 bg-yellow-950/30 border border-yellow-900/40 rounded-lg px-3 py-2">
-            Catatan: di versi lokal ini header Authorization masih dummy (belum divalidasi backend). Endpoint hanya bisa diakses dari localhost kamu sendiri.
+          <p className="text-[11px] text-blue-300/80 mb-4 bg-blue-950/30 border border-blue-900/40 rounded-lg px-3 py-2">
+            Setiap request wajib menyertakan header <code className="mono">Authorization: Bearer &lt;token&gt;</code> —
+            token divalidasi terhadap database ini di server.
           </p>
 
           <div className="mb-4">

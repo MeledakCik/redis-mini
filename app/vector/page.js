@@ -122,7 +122,7 @@ export default function VectorPage() {
                         {inst.provider === "external" && <Badge variant="yellow">External</Badge>}
                       </div>
                       <p className="text-xs text-zinc-500 mt-0.5">
-                        {inst.region || "Local Docker"} · {inst.dimension}d · {inst.metric} · Created {timeAgo(inst.createdAt)}
+                        {inst.region || "ID-JKT-1"} · {inst.dimension}d · {inst.metric} · Created {timeAgo(inst.createdAt)}
                       </p>
                     </div>
                   </div>

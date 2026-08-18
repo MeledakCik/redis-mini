@@ -21,8 +21,9 @@ export async function POST(_req, { params }) {
 
   try {
     const provider = getProviderForInstance(inst);
-    // Mode docker: restart container beneran. Mode external: no-op di sisi infra (gak ada
-    // container), redis-pool.js yang bikin koneksi ioredis fresh biar tetap terasa "reconnect".
+    // Mode docker (legacy): restart container beneran. Mode acl/external: no-op di sisi infra
+    // (gak ada container/proses sendiri), redis-pool.js yang bikin koneksi baru biar tetap
+    // terasa "reconnect" dari sisi customer.
     await provider.restartRedisInstance(inst);
     dropRedisClient(inst.id);
     return NextResponse.json({ success: true });

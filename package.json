@@ -1,5 +1,5 @@
 {
-  "name": "mini-upstash-pro",
+  "name": "redis-uts",
   "version": "1.0.0",
   "private": true,
   "scripts": {

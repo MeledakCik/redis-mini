@@ -3,16 +3,16 @@ import { ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function Header({ breadcrumbs = [] }) {
-  const [dockerOk, setDockerOk] = useState(null);
+  const [clusterOk, setClusterOk] = useState(null);
 
   useEffect(() => {
     let mounted = true;
     async function check() {
       try {
         const res = await fetch("/api/instances");
-        if (mounted) setDockerOk(res.status !== 503);
+        if (mounted) setClusterOk(res.status !== 503);
       } catch {
-        if (mounted) setDockerOk(false);
+        if (mounted) setClusterOk(false);
       }
     }
     check();
@@ -37,11 +37,11 @@ export function Header({ breadcrumbs = [] }) {
       <div className="flex items-center gap-2 text-xs">
         <span
           className={`w-2 h-2 rounded-full ${
-            dockerOk === null ? "bg-zinc-600" : dockerOk ? "bg-accent animate-pulseGlow" : "bg-red-500"
+            clusterOk === null ? "bg-zinc-600" : clusterOk ? "bg-accent animate-pulseGlow" : "bg-red-500"
           }`}
         />
         <span className="text-zinc-400">
-          {dockerOk === null ? "Checking Docker..." : dockerOk ? "Docker connected" : "Docker offline"}
+          {clusterOk === null ? "Checking cluster..." : clusterOk ? "Cluster Online" : "Cluster unreachable"}
         </span>
       </div>
     </header>

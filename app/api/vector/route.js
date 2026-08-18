@@ -101,7 +101,7 @@ export async function POST(req) {
     dimension,
     metric,
     provider: provider.mode,
-    region: provider.mode === "external" ? "External" : "Local Docker",
+    region: "ID-JKT-1",
     tls: false,
     host: provider.mode === "external" ? "external" : "127.0.0.1",
     port: provider.mode === "external" ? null : provider.qdrantBaseUrl?.split(":").pop(),

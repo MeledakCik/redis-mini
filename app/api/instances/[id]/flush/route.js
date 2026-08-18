@@ -19,8 +19,9 @@ export async function POST(_req, { params }) {
   if (!rl.allowed) return rl.response;
 
   try {
-    // FLUSHDB lewat ioredis — sama untuk mode docker maupun external (redis-pool.js
-    // yang nentuin mau konek ke container lokal atau externalUrl).
+    // lib/redis-pool.js yang nentuin cara konek sesuai provider instance (acl/external/docker).
+    // Untuk provider "acl" ini SCOPED ke prefix tenant sendiri, bukan FLUSHDB beneran ke
+    // cluster shared (lihat AclRedisAdapter.flushdb di lib/redis-pool.js).
     const client = getRedisClient(inst);
     await client.flushdb();
     return NextResponse.json({ success: true });

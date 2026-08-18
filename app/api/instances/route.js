@@ -1,19 +1,17 @@
 import { NextResponse } from "next/server";
 import { readInstances, readInstancesForUser, upsertInstance } from "@/lib/store";
-import { getProvider, getProviderForInstance, DEPLOYMENT_MODE } from "@/lib/infra";
-import { generateId, generatePassword, generatePort } from "@/lib/generate";
+import { getProviderForInstance, DEPLOYMENT_MODE, REGION_LABEL, AclProvider } from "@/lib/infra";
+import { generateId } from "@/lib/generate";
 import { requireUser, authErrorResponse } from "@/lib/auth-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { canCreateInstance, limitResponse } from "@/lib/quota";
 
-// NOTE: ini adalah pattern acuan untuk semua route lain di app/api/redis/... dan
-// app/api/vector/... — lihat app/api/vector/route.js untuk versi Vector-nya.
-//
-// Task 2: route ini sekarang provider-agnostic lewat lib/infra.js. Di mode "docker"
-// (local Axioo / VPS dengan Docker daemon) tetap spawn container redis:7-alpine seperti
-// sebelumnya. Di mode "external" (Railway, atau DEPLOYMENT_MODE=external manapun) TIDAK
-// coba spawn container — user connect ke Redis eksternal (Railway Redis plugin, Upstash,
-// dst) lewat REDIS_URL yang dikirim dari form "Connect External Redis".
+// Redis-as-a-Service provider: SATU cluster Redis utama (REDIS_URL) di-share oleh semua
+// customer. Setiap database yang dibuat dari dashboard mendapat akun Redis ACL sendiri
+// (`user_<id>` + password + key prefix `user_<id>:`), diprovisioning otomatis lewat
+// `ACL SETUSER` (lib/tenant.js) — TIDAK ada input URL manual dari customer, TIDAK ada
+// spawn container per database. Instance lama (provider "docker"/"external") tetap
+// ditangani lewat provider masing-masing (lib/infra.js) supaya gak hilang dari dashboard.
 
 export async function GET() {
   let user;
@@ -23,7 +21,7 @@ export async function GET() {
     return authErrorResponse(err);
   }
 
-  // Hanya instance milik user yang login
+  // Hanya database milik user yang login — tidak pernah menampilkan database akun lain.
   const db = readInstancesForUser(user.id);
 
   const result = await Promise.all(
@@ -52,7 +50,7 @@ export async function POST(req) {
     return authErrorResponse(err);
   }
 
-  // Task 3: free tier = 1 Redis database per akun.
+  // Free tier: 1 Redis database per akun (lihat lib/quota.js / halaman Billing untuk upgrade).
   const quota = canCreateInstance(user.id, "redis");
   if (!quota.allowed) {
     return NextResponse.json(limitResponse(quota.reason, { count: quota.count }), { status: 403 });
@@ -62,60 +60,41 @@ export async function POST(req) {
   const rl = await checkRateLimit("redis:create", user.id);
   if (!rl.allowed) return rl.response;
 
-  const provider = getProvider();
-  const providerOk = await provider.isAvailable();
+  const providerOk = await AclProvider.isAvailable();
   if (!providerOk) {
-    const msg =
-      provider.mode === "docker"
-        ? "Docker daemon tidak jalan. Buka Docker Desktop dulu."
-        : "Gagal menghubungi infrastruktur eksternal.";
-    return NextResponse.json({ error: msg }, { status: 503 });
+    return NextResponse.json(
+      { error: "Gagal menghubungi Redis cluster utama. Coba lagi sebentar lagi." },
+      { status: 503 }
+    );
   }
 
   const body = await req.json().catch(() => ({}));
 
   try {
     const id = generateId(8);
-    // Token akses REST API/CLI kita sendiri (dicek di app/api/redis/[id]/exec/route.js).
-    // Ini SELALU digenerate app-level, terpisah dari kredensial Redis eksternal itu sendiri
-    // (yang di mode external sudah nempel di dalam externalUrl / dikelola providernya
-    // sendiri) — jadi endpoint exec tetap konsisten butuh Bearer token di KEDUA mode.
-    const apiToken = generatePassword(24);
-    let created;
 
-    if (provider.mode === "external") {
-      // Mode external (Railway/VPS tanpa Docker daemon): user WAJIB kasih connection
-      // string Redis eksternal sendiri lewat form "Connect External Redis" di frontend.
-      const externalUrl = String(body.redisUrl || body.externalUrl || "").trim();
-      if (!externalUrl) {
-        return NextResponse.json({ error: "Redis URL wajib diisi (redis:// atau rediss://)." }, { status: 400 });
-      }
-      created = await provider.createRedisInstance({ id, externalUrl });
-    } else {
-      // Mode docker (perilaku lama, apa adanya): port unik lintas SEMUA user (satu mesin
-      // Docker dipakai bersama, bukan cuma milik sendiri).
-      const allInstances = readInstances();
-      const port = generatePort(allInstances.map((i) => i.port).filter(Boolean));
-      const containerName = `mini-upstash-${id}`;
-      // Redis container pakai apiToken yang sama sebagai --requirepass, jadi satu token
-      // berfungsi ganda: auth Redis beneran DAN Bearer token endpoint exec kita.
-      created = await provider.createRedisInstance({ id, port, password: apiToken, containerName });
-      created.containerName = containerName;
-    }
+    // Satu klik -> langsung provisioning akun ACL di cluster Redis utama. Tidak ada mode
+    // "connect external redis" lagi di dashboard customer.
+    const created = await AclProvider.createRedisInstance({ id });
 
     const instance = {
       id,
       userId: user.id,
       name: body.name?.trim() || id,
       provider: created.provider,
-      containerId: created.containerId || null,
-      containerName: created.containerName || null,
+      containerId: null,
+      containerName: null,
       host: created.host,
       port: created.port,
-      password: apiToken,
-      externalUrl: created.externalUrl || null,
-      region: created.provider === "external" ? "External" : "Local Docker",
-      tls: created.provider === "external" ? String(created.externalUrl).startsWith("rediss://") : false,
+      username: created.username,
+      prefix: created.prefix,
+      // Password ACL beneran, sekaligus dipakai sebagai Bearer token endpoint REST/CLI kita
+      // sendiri (app/api/redis/[id]/exec) — satu kredensial untuk dua kegunaan, sama seperti
+      // pola lama di lib/tenant.js.
+      password: created.password,
+      externalUrl: created.externalUrl,
+      region: REGION_LABEL,
+      tls: String(created.externalUrl).startsWith("rediss://"),
       eviction: "allkeys-lru",
       maxMemoryMb: 100,
       createdAt: new Date().toISOString(),

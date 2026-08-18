@@ -12,7 +12,7 @@ export function VectorOverviewCards({ instance, stats }) {
 
   const items = [
     { icon: Network, label: "Port", value: instance?.port ?? "-", mono: true },
-    { icon: MapPin, label: "Region", value: instance?.region || "Local Docker" },
+    { icon: MapPin, label: "Region", value: instance?.region || "ID-JKT-1" },
     { icon: instance?.tls ? ShieldCheck : ShieldOff, label: "TLS", value: instance?.tls ? "Enabled" : "Disabled" },
     { icon: Layers, label: "Metric", value: instance?.metric || "cosine", mono: true },
     { icon: Layers, label: "Dimension", value: instance?.dimension ?? "-", mono: true },

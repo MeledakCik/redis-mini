@@ -23,7 +23,7 @@ export default function BillingPage() {
       .catch(() => {});
   }, []);
 
-  // Dummy checkout — gak ada payment provider beneran di edisi lokal ini.
+  // Simulasi checkout — payment provider integration menyusul.
   function handleUpgrade() {
     setUpgrading(true);
     setTimeout(() => {
@@ -41,7 +41,7 @@ export default function BillingPage() {
         <main className="max-w-4xl mx-auto px-6 py-10">
           <div className="mb-8 text-center">
             <h1 className="text-2xl font-bold text-zinc-100">Plans & Billing</h1>
-            <p className="text-sm text-zinc-500 mt-2">Free plan cukup buat development & side project kecil.</p>
+            <p className="text-sm text-zinc-500 mt-2">Free plan cocok untuk development & evaluasi sebelum scale up ke production.</p>
           </div>
 
           {quota && (
@@ -112,7 +112,7 @@ export default function BillingPage() {
               </Button>
               {upgraded && (
                 <p className="text-[11px] text-zinc-500 mt-2 text-center">
-                  Ini dummy checkout — gak ada charge beneran di edisi lokal ini.
+                  Ini simulasi checkout — integrasi payment gateway akan segera hadir.
                 </p>
               )}
             </Card>

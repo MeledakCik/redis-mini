@@ -46,9 +46,9 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm">
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-accent to-emerald-600 flex items-center justify-center font-bold text-black text-base">
-            M
+            R
           </div>
-          <span className="font-semibold text-base tracking-tight text-zinc-100">mini-upstash</span>
+          <span className="font-semibold text-base tracking-tight text-zinc-100">Redis UTS</span>
         </div>
 
         <div className="bg-card2 border border-border rounded-xl shadow-2xl px-6 py-7">
@@ -56,7 +56,7 @@ export default function RegisterPage() {
             <Database size={16} className="text-accent" />
             <h1 className="text-sm font-semibold text-zinc-100">Buat akun baru</h1>
           </div>
-          <p className="text-xs text-zinc-500 mb-6">Data database kamu terpisah per akun.</p>
+          <p className="text-xs text-zinc-500 mb-6">Setiap akun mendapat database Redis yang terisolasi sendiri.</p>
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>

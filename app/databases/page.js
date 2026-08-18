@@ -75,7 +75,7 @@ export default function DatabasesPage() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-xl font-bold text-zinc-100">Databases</h1>
-              <p className="text-sm text-zinc-500 mt-1">Redis instances kamu.</p>
+              <p className="text-sm text-zinc-500 mt-1">Redis database milik akun kamu.</p>
             </div>
             <Button onClick={handleCreateClick} variant={redisLimitReached ? "subtle" : "default"}>
               {redisLimitReached ? <Lock size={15} /> : <Plus size={15} />}
@@ -102,7 +102,7 @@ export default function DatabasesPage() {
             <Card className="py-20 text-center border-dashed">
               <Database className="mx-auto text-zinc-700 mb-3" size={32} />
               <p className="text-zinc-400 font-medium text-sm">Belum ada database</p>
-              <p className="text-zinc-600 text-xs mt-1">Klik "Create Database" untuk mulai instance Redis pertama kamu.</p>
+              <p className="text-zinc-600 text-xs mt-1">Klik "Create Database" untuk provisioning Redis database pertama kamu.</p>
             </Card>
           )}
 
@@ -119,12 +119,11 @@ export default function DatabasesPage() {
                         <p className="font-semibold text-sm text-zinc-100 mono">{inst.id}</p>
                         <Badge variant={inst.status === "running" ? "green" : "red"}>
                           <Circle size={6} className="fill-current" />
-                          {inst.status === "running" ? "Active" : inst.status === "exited" ? "Stopped" : "Unknown"}
+                          {inst.status === "running" ? "Active" : "Unreachable"}
                         </Badge>
-                        {inst.provider === "external" && <Badge variant="yellow">External</Badge>}
                       </div>
                       <p className="text-xs text-zinc-500 mt-0.5">
-                        {inst.region || "Local Docker"} · {inst.provider === "external" ? inst.host : `Port ${inst.port}`} · Created{" "}
+                        {inst.region || "ID-JKT-1"} · {inst.host || "—"} · Created{" "}
                         {timeAgo(inst.createdAt)}
                       </p>
                     </div>

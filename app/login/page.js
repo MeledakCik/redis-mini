@@ -43,9 +43,9 @@ function LoginForm() {
       <div className="w-full max-w-sm">
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-accent to-emerald-600 flex items-center justify-center font-bold text-black text-base">
-            M
+            R
           </div>
-          <span className="font-semibold text-base tracking-tight text-zinc-100">mini-upstash</span>
+          <span className="font-semibold text-base tracking-tight text-zinc-100">Redis UTS</span>
         </div>
 
         <div className="bg-card2 border border-border rounded-xl shadow-2xl px-6 py-7">
@@ -53,7 +53,7 @@ function LoginForm() {
             <Database size={16} className="text-accent" />
             <h1 className="text-sm font-semibold text-zinc-100">Login ke akun kamu</h1>
           </div>
-          <p className="text-xs text-zinc-500 mb-6">Kelola Redis &amp; Vector database kamu sendiri.</p>
+          <p className="text-xs text-zinc-500 mb-6">Kelola Redis database kamu di managed cluster kami.</p>
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>

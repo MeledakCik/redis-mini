@@ -115,7 +115,7 @@ export function CreateVectorDatabaseDialog({ open, onClose, onCreated }) {
 
           <div className="bg-card border border-border rounded-lg px-3 py-2.5 text-xs">
             <p className="text-zinc-600">Region</p>
-            <p className="text-zinc-300 mt-0.5">Local Docker</p>
+            <p className="text-zinc-300 mt-0.5">ID-JKT-1</p>
           </div>
 
           {error && <p className="text-red-400 text-xs bg-red-950/50 border border-red-900 rounded-lg px-3 py-2">{error}</p>}

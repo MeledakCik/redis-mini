@@ -109,7 +109,7 @@ export function CliTerminal({ id, port, token: propToken, apiPath, scheme="redis
     <Card className="bg-[#0a0a0a] border-zinc-800 rounded-xl overflow-hidden">
       <CardHeader className="py-2.5 px-4 flex flex-row items-center justify-between border-b border-zinc-800">
         <CardTitle className="flex items-center gap-2 text-sm"><span className="w-6 h-6 rounded bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center"><TerminalSquare size={12} className="text-emerald-400"/></span>{title}<span className="text-zinc-500 font-mono text-xs ml-1">{port}</span></CardTitle>
-        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/><span className="text-xs text-zinc-400">Docker connected</span></div>
+        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/><span className="text-xs text-zinc-400">Cluster Connected</span></div>
       </CardHeader>
       <CardContent className="p-0"><div ref={containerRef} style={{height:'420px', width:'100%'}} className="px-3 py-2 bg-[#0a0a0a]"/></CardContent>
     </Card>

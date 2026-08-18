@@ -141,7 +141,7 @@ export function RedisConsole({ id }) {
   }
 
   async function handleDelete() {
-    if (!confirm(`Hapus permanen instance "${id}"? Container Docker akan ikut dihapus.`)) return;
+    if (!confirm(`Hapus permanen database "${id}"? Akun ACL dan semua key akan ikut dihapus.`)) return;
     setBusy(true);
     try {
       const ok = await withRateLimitHandling(() => fetch(`/api/instances/${id}`, { method: "DELETE" }));
@@ -182,7 +182,7 @@ export function RedisConsole({ id }) {
               <h1 className="text-lg font-bold mono text-zinc-100">{id}</h1>
               <Badge variant={instance?.status === "running" ? "green" : "red"}>
                 <Circle size={6} className="fill-current" />
-                {instance?.status === "running" ? "Active" : instance?.status === "exited" ? "Stopped" : "Unknown"}
+                {instance?.status === "running" ? "Active" : "Unreachable"}
               </Badge>
               {!stats?.connected && instance && (
                 <Badge variant="yellow">Redis unreachable</Badge>
@@ -196,7 +196,7 @@ export function RedisConsole({ id }) {
               <Button size="sm" variant="subtle" onClick={handleFlush} disabled={busy || isRateLimited}>
                 <Eraser size={13} /> Flush
               </Button>
-              <Button size="sm" variant="subtle" disabled title="Fitur upgrade cuma dummy di edisi lokal">
+              <Button size="sm" variant="subtle" disabled title="Fitur upgrade — lihat halaman Billing">
                 <Sparkles size={13} /> Upgrade
               </Button>
               <Button size="sm" variant="danger" onClick={handleDelete} disabled={busy || isRateLimited}>

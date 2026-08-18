@@ -2,8 +2,8 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata = {
-  title: "mini-upstash · Redis Console",
-  description: "Local Redis-as-a-Service console, powered by Docker",
+  title: "Redis UTS · Managed Redis Provider",
+  description: "Redis Cloud by UTS — provisioning Redis database dengan isolasi ACL, siap pakai dalam satu klik.",
 };
 
 export default function RootLayout({ children }) {

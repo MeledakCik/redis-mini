@@ -19,7 +19,7 @@ export function OverviewCards({ instance, stats }) {
     {
       icon: MapPin,
       label: "Region",
-      value: instance?.region || "Local Docker",
+      value: instance?.region || "ID-JKT-1",
     },
     {
       icon: instance?.tls ? ShieldCheck : ShieldOff,
