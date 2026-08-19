@@ -82,6 +82,8 @@ Wajib:
 - REDIS_PASSWORD=PASSWORD
 - REDIS_PUBLIC_HOST=console.kasyaf.id:6379
 - QDRANT_URL=http://qdrant:6333
+- QDRANT_HOST=console.kasyaf.id (host publik buat connection string; port default 6333)
+- QDRANT_PUBLIC_URL=http://console.kasyaf.id:6333 (opsional, override QDRANT_HOST; sengaja http bukan https, port 6333 gak di-TLS-in nginx)
 - VECTOR_PUBLIC_HOST=vector.kasyaf.id
 - APP_ENV=vps
 - NODE_ENV=production

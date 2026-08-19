@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { readVectorInstances, readVectorInstancesForUser, upsertVectorInstance } from "@/lib/vector-store";
 import { getProvider, DEPLOYMENT_MODE } from "@/lib/infra";
 import { createCollection, getCollectionInfo, isQdrantReachable } from "@/lib/qdrant";
+import { resolvePublicQdrantEndpoint } from "@/lib/qdrant-public-host";
 import { generateId, generatePassword } from "@/lib/generate";
 import { requireUser, authErrorResponse } from "@/lib/auth-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -94,6 +95,12 @@ export async function POST(req) {
     return NextResponse.json({ error: err.message || "Gagal membuat collection di Qdrant" }, { status: 500 });
   }
 
+  // Host/port publik yang ditampilkan ke customer (connection string, curl example, dst).
+  // Sebelumnya hardcode "external"/null di mode external — sekarang selalu resolve dari
+  // QDRANT_HOST / QDRANT_PUBLIC_URL (fallback 127.0.0.1:6333), jadi gak pernah lagi tampil
+  // "qdrant://default:token@external:null/name" yang jelas gak connectable.
+  const { host: publicHost, port: publicPort } = resolvePublicQdrantEndpoint();
+
   const instance = {
     id: name,
     userId: user.id,
@@ -103,8 +110,8 @@ export async function POST(req) {
     provider: provider.mode,
     region: "ID-JKT-1",
     tls: false,
-    host: provider.mode === "external" ? "external" : "127.0.0.1",
-    port: provider.mode === "external" ? null : provider.qdrantBaseUrl?.split(":").pop(),
+    host: publicHost,
+    port: publicPort,
     token: generatePassword(24),
     createdAt: new Date().toISOString(),
   };
