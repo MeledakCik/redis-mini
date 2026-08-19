@@ -1,9 +1,11 @@
 node_modules/
 .next/
+.env
 .env*.local
 npm-debug.log*
 .DS_Store
-
-# Data persisten (instances.json, vector-instances.json, users.json di mode DATA_DIR=./data)
 data/*
 !data/.gitkeep
+*.bak
+.dockerignore
+next.config.js
