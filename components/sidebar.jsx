@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Database, Boxes, CreditCard, KeyRound, LogOut } from "lucide-react";
@@ -19,10 +20,11 @@ export function Sidebar() {
   return (
     <aside className="w-56 shrink-0 border-r border-border bg-bg h-screen sticky top-0 flex flex-col">
       <div className="h-14 flex items-center gap-2 px-4 border-b border-border">
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-accent to-emerald-600 flex items-center justify-center font-bold text-black text-sm">
-          R
+        <Image src="/logo.png" alt="Kasyaf Redis Cloud" width={32} height={32} className="h-8 w-8 object-contain shrink-0" />
+        <div className="flex flex-col leading-tight min-w-0">
+          <span className="font-semibold text-sm tracking-tight text-zinc-100 truncate">Kasyaf Redis Cloud</span>
+          <span className="text-[10px] text-zinc-500 opacity-70">by Cikawan</span>
         </div>
-        <span className="font-semibold text-sm tracking-tight text-zinc-100">Redis UTS</span>
       </div>
 
       <nav className="flex-1 py-3 px-2 space-y-0.5">
@@ -62,7 +64,7 @@ export function Sidebar() {
             </button>
           </div>
         )}
-        <div className="px-3 pb-3 pt-1 text-[11px] text-zinc-600">Redis UTS · Managed Redis Provider</div>
+        <div className="px-3 pb-3 pt-1 text-[11px] text-zinc-600">Kasyaf Redis Cloud · by Cikawan</div>
       </div>
     </aside>
   );

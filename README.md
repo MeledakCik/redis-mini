@@ -1,4 +1,8 @@
-# redis-mini — Redis + Qdrant Mini Console
+# Kasyaf Redis Cloud
+
+### by Cikawan — https://kasyaf.id
+
+![Kasyaf Redis Cloud](/public/logo.png)
 
 Lightweight console untuk Redis & Vector DB (Qdrant), clone ala console.upstash.com. Dark theme, accent hijau #00e095, font JetBrains Mono.
 
