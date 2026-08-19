@@ -108,7 +108,7 @@ export default function DatabasesPage() {
 
           <div className="grid grid-cols-1 gap-3">
             {instances.map((inst) => (
-              <Link key={inst.id} href={`/redis/${inst.id}`}>
+              <Link key={inst.id} href={`/databases/${inst.id}?type=redis`}>
                 <Card className="p-4 flex items-center justify-between hover:border-zinc-700 transition-colors fade-in">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">

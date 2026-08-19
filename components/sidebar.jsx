@@ -2,11 +2,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { Database, CreditCard, KeyRound, LogOut } from "lucide-react";
+import { Database, Boxes, CreditCard, KeyRound, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const menu = [
   { label: "Databases", icon: Database, href: "/databases" },
+  { label: "Vector", icon: Boxes, href: "/vector" },
   { label: "API Keys", icon: KeyRound, href: "/connect" },
   { label: "Billing", icon: CreditCard, href: "/billing" },
 ];

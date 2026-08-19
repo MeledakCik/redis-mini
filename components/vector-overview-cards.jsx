@@ -14,12 +14,13 @@ export function VectorOverviewCards({ instance, stats }) {
     { icon: Network, label: "Port", value: instance?.port ?? "-", mono: true },
     { icon: MapPin, label: "Region", value: instance?.region || "ID-JKT-1" },
     { icon: instance?.tls ? ShieldCheck : ShieldOff, label: "TLS", value: instance?.tls ? "Enabled" : "Disabled" },
-    { icon: Layers, label: "Metric", value: instance?.metric || "cosine", mono: true },
+    { icon: Layers, label: "Index", value: "HNSW", mono: true },
+    { icon: Layers, label: "Metric", value: (instance?.metric || "cosine").toUpperCase(), mono: true },
     { icon: Layers, label: "Dimension", value: instance?.dimension ?? "-", mono: true },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-7 gap-3">
+    <div className="grid grid-cols-2 lg:grid-cols-8 gap-3">
       <Card className="lg:col-span-2 p-4">
         <div className="flex items-center gap-2 text-xs text-zinc-500 mb-2">
           <HardDrive size={13} /> Memory Usage

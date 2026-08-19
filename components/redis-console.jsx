@@ -36,7 +36,7 @@ const TABS = [
 
 const MAX_POINTS = 20;
 
-export function RedisConsole({ id }) {
+export function RedisConsole({ id, embedded = false }) {
   const router = useRouter();
   const [tab, setTab] = useState("details");
   const [instance, setInstance] = useState(null);
@@ -152,17 +152,23 @@ export function RedisConsole({ id }) {
   }
 
   if (notFound) {
+    const emptyState = (
+      <div className="max-w-4xl mx-auto px-6 py-20 text-center">
+        <p className="text-zinc-400">Instance "{id}" tidak ditemukan.</p>
+        {!embedded && (
+          <Button className="mt-4" variant="outline" onClick={() => router.push("/databases")}>
+            Kembali ke Databases
+          </Button>
+        )}
+      </div>
+    );
+    if (embedded) return emptyState;
     return (
       <div className="flex">
         <Sidebar />
         <div className="flex-1">
           <Header breadcrumbs={["Databases", id]} />
-          <div className="max-w-4xl mx-auto px-6 py-20 text-center">
-            <p className="text-zinc-400">Instance "{id}" tidak ditemukan.</p>
-            <Button className="mt-4" variant="outline" onClick={() => router.push("/databases")}>
-              Kembali ke Databases
-            </Button>
-          </div>
+          {emptyState}
         </div>
       </div>
     );
@@ -170,13 +176,8 @@ export function RedisConsole({ id }) {
 
   const activeTabLabel = TABS.find((t) => t.value === tab)?.label || "Details";
 
-  return (
-    <div className="flex">
-      <Sidebar />
-      <div className="flex-1 min-w-0">
-        <Header breadcrumbs={["Databases", id, activeTabLabel]} />
-
-        <main className="max-w-6xl mx-auto px-6 py-6">
+  const body = (
+    <>
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
             <div className="flex items-center gap-2.5">
               <h1 className="text-lg font-bold mono text-zinc-100">{id}</h1>
@@ -263,7 +264,17 @@ export function RedisConsole({ id }) {
               <BackupsPanel />
             </div>
           )}
-        </main>
+    </>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <div className="flex">
+      <Sidebar />
+      <div className="flex-1 min-w-0">
+        <Header breadcrumbs={["Databases", id, activeTabLabel]} />
+        <main className="max-w-6xl mx-auto px-6 py-6">{body}</main>
       </div>
     </div>
   );
