@@ -1,0 +1,59 @@
+RINGKASAN PERUBAHAN — cukup extract zip ini, timpa folder repo lokal kamu, lalu:
+  git add .
+  git commit -m "..."   (kalau history commit gak ke-carry, tergantung cara extract)
+  git push origin main
+
+Kalau extract via ZIP biasa (klik kanan > Extract): history commit (.git) IKUT KEBAWA,
+jadi kamu tinggal langsung "git push origin main" tanpa commit lagi.
+
+===========================================================
+COMMIT 1: feat: rebrand to Kasyaf Redis Cloud by Cikawan + logo + SEO ready for GSC
+===========================================================
+BARU:
+  public/logo.png          - logo transparan
+  public/favicon.ico       - favicon multi-size dari logo
+  app/favicon.ico          - copy favicon utk App Router
+  public/og-image.png      - 1200x630 social preview image
+  public/robots.txt        - SEO robots
+  app/sitemap.js           - sitemap.xml generator
+  app/manifest.js          - PWA manifest
+
+DIUBAH:
+  package.json             - name jadi "kasyaf-redis-cloud" + description
+  app/layout.js             - metadata title/description/OG/Twitter/JSON-LD lengkap
+  components/sidebar.jsx    - logo + "Kasyaf Redis Cloud" + badge "by Cikawan"
+  app/login/page.js         - branding logo di halaman login
+  app/register/page.js      - branding logo di halaman register
+  README.md                 - header rebrand
+
+===========================================================
+COMMIT 2: fix: vector db use single qdrant collection not container per db
+===========================================================
+BUG: create Vector Database gagal — "port already allocated 0.0.0.0:6333"
+SEBAB: lib/infra.js masih coba spawn container Qdrant baru tiap kali,
+       padahal docker-compose.yml udah punya service "qdrant" sendiri di port 6333.
+
+DIUBAH:
+  lib/infra.js               - HAPUS semua createContainer/pull image/PortBindings
+                                untuk Qdrant. Sekarang cuma cek reachability
+                                (fetch ke qdrantBaseUrl), gak spawn container lagi.
+  app/api/vector/route.js    - fix host/port instance (dulu "external"/null,
+                                sekarang resolve dari QDRANT_HOST/QDRANT_PUBLIC_URL)
+  lib/vector-store.js        - auto-fix instance lama yang host/port-nya rusak
+  .env.example               - tambah QDRANT_HOST & QDRANT_PUBLIC_URL
+  README.md                  - dokumentasi env var baru
+
+BARU:
+  lib/qdrant-public-host.js  - resolver host:port publik utk connection string
+                                (default http, bukan https — port 6333 gak di-TLS-in nginx)
+
+TIDAK DIUBAH (sesuai constraint): docker-compose.yml, Dockerfile, nginx.conf,
+  lib/qdrant.js (create/delete collection via REST API, udah bener dari awal),
+  app/api/vector/[id]/route.js (DELETE/GET udah pakai collection API)
+
+===========================================================
+ACTION SEBELUM DEPLOY ULANG:
+===========================================================
+Isi .env di VPS kamu dengan:
+  QDRANT_HOST=console.kasyaf.id
+  (atau QDRANT_PUBLIC_URL=http://console.kasyaf.id:6333)
