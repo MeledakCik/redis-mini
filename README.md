@@ -1,6 +1,6 @@
 # Kasyaf Redis Cloud
 
-### by Cikawan — https://kasyaf.id
+### by Cikawan — https://console.kasyaf.id
 
 ![Kasyaf Redis Cloud](/public/logo.png)
 
