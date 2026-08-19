@@ -3,6 +3,7 @@ import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Database, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,10 +57,11 @@ function LoginForm() {
 
       <div className="w-full max-w-sm fade-in">
         <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-accent to-emerald-600 flex items-center justify-center font-bold text-black text-base shadow-[0_0_20px_rgba(0,224,149,0.35)]">
-            R
+          <Image src="/logo.png" alt="Kasyaf Redis Cloud" width={36} height={36} className="h-9 w-9 object-contain" />
+          <div className="flex flex-col leading-tight">
+            <span className="font-semibold text-base tracking-tight text-zinc-100">Kasyaf Redis Cloud</span>
+            <span className="text-[10px] text-zinc-500 opacity-70">by Cikawan</span>
           </div>
-          <span className="font-semibold text-base tracking-tight text-zinc-100">Redis UTS</span>
         </div>
 
         <div className="bg-card2/70 backdrop-blur-xl border border-border rounded-xl shadow-2xl px-6 py-7 ring-1 ring-white/[0.03]">

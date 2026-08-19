@@ -1,6 +1,7 @@
 {
-  "name": "redis-uts",
+  "name": "kasyaf-redis-cloud",
   "version": "1.0.0",
+  "description": "Kasyaf Redis Cloud by Cikawan - Redis + Vector DB Console",
   "private": true,
   "scripts": {
     "dev": "next dev",
