@@ -10,7 +10,13 @@ export function Card({ className, children, ...props }) {
 
 export function CardHeader({ className, children, ...props }) {
   return (
-    <div className={cn("px-5 py-4 border-b border-border flex items-center justify-between", className)} {...props}>
+    <div
+      className={cn(
+        "px-4 md:px-5 py-3.5 md:py-4 border-b border-border flex items-center justify-between gap-2 flex-wrap",
+        className
+      )}
+      {...props}
+    >
       {children}
     </div>
   );
@@ -26,7 +32,7 @@ export function CardTitle({ className, children, ...props }) {
 
 export function CardContent({ className, children, ...props }) {
   return (
-    <div className={cn("px-5 py-4", className)} {...props}>
+    <div className={cn("px-4 md:px-5 py-3.5 md:py-4", className)} {...props}>
       {children}
     </div>
   );

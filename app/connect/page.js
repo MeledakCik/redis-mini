@@ -1,12 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { KeyRound, Loader2, Globe, Database, ChevronRight } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CopyField } from "@/components/copy-field";
+import { cardReveal, staggerContainer } from "@/lib/motion";
 
 // API Keys: aktivasi & tampilkan token REST API untuk database milik akun ini sendiri.
 // Provisioning akun Redis ACL sendiri sekarang dilakukan lewat tombol "Create Database"
@@ -28,7 +30,7 @@ export default function ConnectPage() {
       <div className="flex-1 min-w-0">
         <Header breadcrumbs={["API Keys"]} />
 
-        <main className="max-w-3xl mx-auto px-6 py-10">
+        <main className="max-w-3xl mx-auto px-4 md:px-6 py-8 md:py-10 pb-28 lg:pb-8">
           <div className="mb-6">
             <h1 className="text-xl font-bold text-zinc-100 flex items-center gap-2">
               <KeyRound size={18} className="text-accent" /> API Keys
@@ -65,18 +67,24 @@ export default function ConnectPage() {
             </Card>
           )}
 
-          <div className="space-y-4">
+          <motion.div
+            variants={staggerContainer(0.08)}
+            initial="hidden"
+            animate="show"
+            className="space-y-4"
+          >
             {instances?.map((inst) => (
-              <Card key={inst.id}>
+              <motion.div key={inst.id} variants={cardReveal}>
+                <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between w-full">
-                    <span className="flex items-center gap-2">
-                      <Database size={14} className="text-accent" />
-                      <span className="mono">{inst.name || inst.id}</span>
+                  <CardTitle className="flex items-center justify-between w-full flex-wrap gap-2">
+                    <span className="flex items-center gap-2 min-w-0">
+                      <Database size={14} className="text-accent shrink-0" />
+                      <span className="mono truncate">{inst.name || inst.id}</span>
                     </span>
                     <Link
                       href={`/redis/${inst.id}`}
-                      className="text-xs text-zinc-500 hover:text-accent flex items-center gap-0.5 font-normal"
+                      className="text-xs text-zinc-500 hover:text-accent flex items-center gap-0.5 font-normal shrink-0"
                     >
                       Details <ChevronRight size={12} />
                     </Link>
@@ -95,9 +103,10 @@ export default function ConnectPage() {
                   />
                   <CopyField label="REST Token" value={inst.password} />
                 </CardContent>
-              </Card>
+                </Card>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </main>
       </div>
     </div>

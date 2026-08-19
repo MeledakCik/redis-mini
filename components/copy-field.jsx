@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Eye, EyeOff, Copy, Check } from "lucide-react";
 
 export function CopyField({ label, value, mono = true, icon: Icon }) {
@@ -41,8 +42,33 @@ export function CopyField({ label, value, mono = true, icon: Icon }) {
             {revealed ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
         )}
-        <button onClick={copy} className="text-zinc-500 hover:text-accent shrink-0">
-          {copied ? <Check size={14} className="text-accent" /> : <Copy size={14} />}
+        <button onClick={copy} className="text-zinc-500 hover:text-accent shrink-0 relative h-3.5 w-3.5">
+          {/* ANIMASI KASYAF: copy button jadi checkmark dengan pop animasi */}
+          <AnimatePresence mode="wait" initial={false}>
+            {copied ? (
+              <motion.span
+                key="check"
+                initial={{ scale: 0.4, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.4, opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="absolute inset-0 flex items-center justify-center text-accent"
+              >
+                <Check size={14} />
+              </motion.span>
+            ) : (
+              <motion.span
+                key="copy"
+                initial={{ scale: 0.4, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.4, opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <Copy size={14} />
+              </motion.span>
+            )}
+          </AnimatePresence>
         </button>
       </div>
     </div>

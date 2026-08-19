@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Database, Boxes, Circle } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
@@ -25,13 +26,13 @@ export function UnifiedConsole({ id, initialTab = "redis" }) {
       <div className="flex-1 min-w-0">
         <Header breadcrumbs={["Databases", id, activeMeta.label]} />
 
-        <main className="max-w-6xl mx-auto px-6 py-6">
+        <main className="max-w-6xl mx-auto px-4 md:px-6 py-6 pb-28 lg:pb-8">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-lg font-bold mono text-zinc-100">{id}</h1>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <h1 className="text-lg font-bold mono text-zinc-100 truncate">{id}</h1>
               <span
                 className={cn(
-                  "inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full border",
+                  "inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full border shrink-0",
                   activeMeta.badgeColor
                 )}
               >
@@ -42,7 +43,7 @@ export function UnifiedConsole({ id, initialTab = "redis" }) {
           </div>
 
           {/* Outer tabs: Redis / Vector - the unified project view */}
-          <div className="mb-6 flex items-center gap-2 p-1 rounded-xl border border-zinc-800 bg-[#0e0e0e] w-fit">
+          <div className="mb-6 flex items-center gap-2 p-1 rounded-xl border border-zinc-800 bg-[#0e0e0e] w-fit max-w-full overflow-x-auto no-scrollbar">
             {OUTER_TABS.map((t) => {
               const Icon = t.icon;
               const isActive = activeOuter === t.value;
@@ -64,10 +65,15 @@ export function UnifiedConsole({ id, initialTab = "redis" }) {
             })}
           </div>
 
-          <div className="fade-in">
+          <motion.div
+            key={activeOuter}
+            initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          >
             {activeOuter === "redis" && <RedisConsole id={id} embedded />}
             {activeOuter === "vector" && <VectorConsole id={id} embedded />}
-          </div>
+          </motion.div>
         </main>
       </div>
     </div>

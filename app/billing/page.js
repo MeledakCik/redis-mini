@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { Check, Sparkles, Database, Boxes, HardDrive } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
@@ -7,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatBytes } from "@/lib/utils";
+import { cardReveal, staggerContainer } from "@/lib/motion";
 
 const FREE_FEATURES = ["1 Redis database", "1 Vector database", "500MB total storage", "Community support"];
 const PRO_FEATURES = ["Unlimited Redis databases", "Unlimited Vector databases", "10GB total storage", "Priority support"];
@@ -38,7 +40,7 @@ export default function BillingPage() {
       <div className="flex-1 min-w-0">
         <Header breadcrumbs={["Billing"]} />
 
-        <main className="max-w-4xl mx-auto px-6 py-10">
+        <main className="max-w-4xl mx-auto px-4 md:px-6 py-8 md:py-10 pb-28 lg:pb-8">
           <div className="mb-8 text-center">
             <h1 className="text-2xl font-bold text-zinc-100">Plans & Billing</h1>
             <p className="text-sm text-zinc-500 mt-2">Free plan cocok untuk development & evaluasi sebelum scale up ke production.</p>
@@ -68,7 +70,13 @@ export default function BillingPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <motion.div
+            variants={staggerContainer(0.1)}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+          >
+            <motion.div variants={cardReveal}>
             <Card className="p-6">
               <div className="flex items-center justify-between mb-1">
                 <h2 className="text-base font-semibold text-zinc-100">Free</h2>
@@ -88,7 +96,9 @@ export default function BillingPage() {
                 Current plan
               </Button>
             </Card>
+            </motion.div>
 
+            <motion.div variants={cardReveal}>
             <Card className="p-6 border-accent/40 relative overflow-hidden">
               <div className="absolute top-0 right-0 bg-accent text-black text-[10px] font-bold px-2.5 py-1 rounded-bl-lg">
                 RECOMMENDED
@@ -116,7 +126,8 @@ export default function BillingPage() {
                 </p>
               )}
             </Card>
-          </div>
+            </motion.div>
+          </motion.div>
         </main>
       </div>
     </div>

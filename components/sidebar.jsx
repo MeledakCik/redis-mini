@@ -3,7 +3,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { Database, Boxes, CreditCard, KeyRound, LogOut } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Database, Boxes, CreditCard, KeyRound, LogOut, Menu, X } from "lucide-react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const menu = [
@@ -13,12 +15,9 @@ const menu = [
   { label: "Billing", icon: CreditCard, href: "/billing" },
 ];
 
-export function Sidebar() {
-  const pathname = usePathname();
-  const { data: session } = useSession();
-
+function SidebarContent({ pathname, session, onNavigate }) {
   return (
-    <aside className="w-56 shrink-0 border-r border-border bg-bg h-screen sticky top-0 flex flex-col">
+    <>
       <div className="h-14 flex items-center gap-2 px-4 border-b border-border">
         <Image src="/logo.png" alt="Kasyaf Redis Cloud" width={32} height={32} className="h-8 w-8 object-contain shrink-0" />
         <div className="flex flex-col leading-tight min-w-0">
@@ -35,15 +34,24 @@ export function Sidebar() {
             <Link
               key={item.label}
               href={item.href}
+              onClick={onNavigate}
               className={cn(
-                "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors",
+                "relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors",
                 isActive
-                  ? "bg-accent/10 text-accent font-medium"
+                  ? "text-accent font-medium"
                   : "text-zinc-400 hover:text-zinc-100 hover:bg-white/5"
               )}
             >
-              <Icon size={15} />
-              {item.label}
+              {/* ANIMASI KASYAF: active indicator meluncur pakai layoutId */}
+              {isActive && (
+                <motion.span
+                  layoutId="sidebar-active-indicator"
+                  transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                  className="absolute inset-0 bg-accent/10 rounded-lg"
+                />
+              )}
+              <Icon size={15} className="relative" />
+              <span className="relative">{item.label}</span>
             </Link>
           );
         })}
@@ -66,6 +74,63 @@ export function Sidebar() {
         )}
         <div className="px-3 pb-3 pt-1 text-[11px] text-zinc-600">Kasyaf Redis Cloud · by Cikawan</div>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      {/* Desktop sidebar — RESPONSIVE FIX: cuma render di lg+, di bawahnya jadi drawer */}
+      <aside className="hidden lg:flex w-56 shrink-0 border-r border-border bg-bg h-screen sticky top-0 flex-col">
+        <SidebarContent pathname={pathname} session={session} />
+      </aside>
+
+      {/* Mobile: FAB trigger, posisi bottom-left biar gak nabrak tombol lain */}
+      <motion.button
+        onClick={() => setOpen(true)}
+        whileTap={{ scale: 0.92 }}
+        className="lg:hidden fixed bottom-6 left-6 z-40 h-14 w-14 rounded-full bg-white text-black shadow-[0_4px_24px_rgba(0,0,0,0.5)] flex items-center justify-center"
+        aria-label="Open menu"
+      >
+        <Menu size={22} />
+      </motion.button>
+
+      {/* Mobile drawer */}
+      <AnimatePresence>
+        {open && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="lg:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-xl"
+              onClick={() => setOpen(false)}
+            />
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", stiffness: 340, damping: 34 }}
+              className="lg:hidden fixed left-0 top-0 bottom-0 z-50 w-[78vw] max-w-[280px] bg-bg border-r border-border flex flex-col"
+            >
+              <button
+                onClick={() => setOpen(false)}
+                className="absolute top-3.5 right-3.5 text-zinc-500 hover:text-white"
+                aria-label="Close menu"
+              >
+                <X size={18} />
+              </button>
+              <SidebarContent pathname={pathname} session={session} onNavigate={() => setOpen(false)} />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

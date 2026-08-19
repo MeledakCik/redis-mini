@@ -21,6 +21,7 @@ module.exports = {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
+        display: ["Space Grotesk", "Inter", "system-ui", "sans-serif"],
       },
       boxShadow: {
         soft: "0 1px 2px rgba(0,0,0,0.4)",
@@ -34,9 +35,14 @@ module.exports = {
           "0%, 100%": { opacity: 1 },
           "50%": { opacity: 0.4 },
         },
+        marquee: {
+          "0%": { transform: "translateX(0%)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
       },
       animation: {
         pulseGlow: "pulseGlow 2s ease-in-out infinite",
+        marquee: "marquee 20s linear infinite",
       },
     },
   },

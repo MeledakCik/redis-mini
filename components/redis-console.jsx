@@ -11,6 +11,7 @@ import { Header } from "@/components/header";
 import { Tabs } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { motion, AnimatePresence } from "framer-motion";
 import { OverviewCards } from "@/components/overview-cards";
 import { StorageUsageCard } from "@/components/storage-usage-card";
 import { ConnectionSection } from "@/components/connection-section";
@@ -153,7 +154,7 @@ export function RedisConsole({ id, embedded = false }) {
 
   if (notFound) {
     const emptyState = (
-      <div className="max-w-4xl mx-auto px-6 py-20 text-center">
+      <div className="max-w-4xl mx-auto px-4 md:px-6 py-20 text-center">
         <p className="text-zinc-400">Instance "{id}" tidak ditemukan.</p>
         {!embedded && (
           <Button className="mt-4" variant="outline" onClick={() => router.push("/databases")}>
@@ -178,9 +179,10 @@ export function RedisConsole({ id, embedded = false }) {
 
   const body = (
     <>
+          {/* RESPONSIVE FIX: action buttons wrap + scroll horizontally instead of blowing out on 375px */}
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-lg font-bold mono text-zinc-100">{id}</h1>
+            <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
+              <h1 className="text-lg font-bold mono text-zinc-100 truncate">{id}</h1>
               <Badge variant={instance?.status === "running" ? "green" : "red"}>
                 <Circle size={6} className="fill-current" />
                 {instance?.status === "running" ? "Active" : "Unreachable"}
@@ -190,17 +192,17 @@ export function RedisConsole({ id, embedded = false }) {
               )}
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="subtle" onClick={handleRestart} disabled={busy || isRateLimited}>
+            <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto no-scrollbar">
+              <Button size="sm" variant="subtle" onClick={handleRestart} disabled={busy || isRateLimited} className="shrink-0">
                 {busy ? <Loader2 size={13} className="animate-spin" /> : <RotateCw size={13} />} Restart
               </Button>
-              <Button size="sm" variant="subtle" onClick={handleFlush} disabled={busy || isRateLimited}>
+              <Button size="sm" variant="subtle" onClick={handleFlush} disabled={busy || isRateLimited} className="shrink-0">
                 <Eraser size={13} /> Flush
               </Button>
-              <Button size="sm" variant="subtle" disabled title="Fitur upgrade — lihat halaman Billing">
+              <Button size="sm" variant="subtle" disabled title="Fitur upgrade — lihat halaman Billing" className="shrink-0">
                 <Sparkles size={13} /> Upgrade
               </Button>
-              <Button size="sm" variant="danger" onClick={handleDelete} disabled={busy || isRateLimited}>
+              <Button size="sm" variant="danger" onClick={handleDelete} disabled={busy || isRateLimited} className="shrink-0">
                 <Trash2 size={13} /> Delete
               </Button>
             </div>
@@ -217,53 +219,46 @@ export function RedisConsole({ id, embedded = false }) {
             <Tabs tabs={TABS} active={tab} onChange={setTab} />
           </div>
 
-          {tab === "details" && (
-            <div className="space-y-5 fade-in">
-              <OverviewCards instance={instance} stats={stats} />
-              <StorageUsageCard />
-              <ConnectionSection instance={instance} />
-              <MetricsCharts history={history} />
-            </div>
-          )}
+          {/* ANIMASI KASYAF: tab switch pakai blur+rise, ganti fade-in CSS lama */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={tab}
+              initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -8, filter: "blur(6px)" }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {tab === "details" && (
+                <div className="space-y-5">
+                  <OverviewCards instance={instance} stats={stats} />
+                  <StorageUsageCard />
+                  <ConnectionSection instance={instance} />
+                  <MetricsCharts history={history} />
+                </div>
+              )}
 
-          {tab === "browser" && (
-            <div className="fade-in">
-              <DataBrowser id={id} token={instance?.password} />
-            </div>
-          )}
+              {tab === "browser" && <DataBrowser id={id} token={instance?.password} />}
 
-          {tab === "cli" && (
-            <div className="fade-in">
-              <CliTerminal
-                id={instance?.id || id}
-                port={instance?.port || "----"}
-                token={instance?.password || instance?.token}
-                apiPath={`/api/redis/${id}/exec`}
-                scheme="redis"
-                title="Redis CLI"
-                hint="PING, SET foo bar, GET foo, KEYS *, FLUSHALL — Ctrl+L clear, ↑↓ history"
-                connectionString={instance?.connectionString}
-              />
-            </div>
-          )}
+              {tab === "cli" && (
+                <CliTerminal
+                  id={instance?.id || id}
+                  port={instance?.port || "----"}
+                  token={instance?.password || instance?.token}
+                  apiPath={`/api/redis/${id}/exec`}
+                  scheme="redis"
+                  title="Redis CLI"
+                  hint="PING, SET foo bar, GET foo, KEYS *, FLUSHALL — Ctrl+L clear, ↑↓ history"
+                  connectionString={instance?.connectionString}
+                />
+              )}
 
-          {tab === "rest" && (
-            <div className="fade-in">
-              <RestApiPanel instance={instance} />
-            </div>
-          )}
+              {tab === "rest" && <RestApiPanel instance={instance} />}
 
-          {tab === "insights" && (
-            <div className="fade-in">
-              <InsightsPanel id={id} latencyHistory={history} />
-            </div>
-          )}
+              {tab === "insights" && <InsightsPanel id={id} latencyHistory={history} />}
 
-          {tab === "backups" && (
-            <div className="fade-in">
-              <BackupsPanel />
-            </div>
-          )}
+              {tab === "backups" && <BackupsPanel />}
+            </motion.div>
+          </AnimatePresence>
     </>
   );
 
@@ -274,7 +269,7 @@ export function RedisConsole({ id, embedded = false }) {
       <Sidebar />
       <div className="flex-1 min-w-0">
         <Header breadcrumbs={["Databases", id, activeTabLabel]} />
-        <main className="max-w-6xl mx-auto px-6 py-6">{body}</main>
+        <main className="max-w-6xl mx-auto px-4 md:px-6 py-6 pb-28 lg:pb-8">{body}</main>
       </div>
     </div>
   );

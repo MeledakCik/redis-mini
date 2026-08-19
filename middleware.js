@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 
+// BAGIAN D: "/" (landing) dan "/login" publik by design — keduanya sengaja TIDAK
+// dimasukkan ke matcher di bawah, jadi middleware ini gak pernah jalan buat mereka.
+// "/" sendiri menentukan CTA (Login vs Go to Dashboard) lewat auth() di server component,
+// bukan lewat redirect paksa di sini.
 const PROTECTED_PAGES = ["/databases", "/vector", "/billing", "/connect"];
 
 export function middleware(req) {

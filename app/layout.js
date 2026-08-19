@@ -1,5 +1,7 @@
 import "./globals.css";
 import { Providers } from "./providers";
+import { TopProgressBar } from "@/components/top-progress-bar";
+import { PageTransition } from "@/components/page-transition";
 
 const siteUrl = "https://console.kasyaf.id";
 const title = "Kasyaf Redis Cloud | by Cikawan";
@@ -68,8 +70,12 @@ export default function RootLayout({ children }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="bg-bg text-zinc-100 antialiased">
-        <Providers>{children}</Providers>
+      <body className="bg-bg text-zinc-100 antialiased overflow-x-clip">
+        <Providers>
+          {/* ANIMASI KASYAF: top scroll progress bar, tampil di semua halaman */}
+          <TopProgressBar />
+          <PageTransition>{children}</PageTransition>
+        </Providers>
       </body>
     </html>
   );
