@@ -1,88 +1,127 @@
 "use client";
+// REDESIGN 2030: Ecosystem & Roadmap — 4 products, LIVE / COMING SOON / ROADMAP badges,
+// 3D tilt on hover with a glare that follows the cursor.
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Zap, Boxes, Plug, Container, HardDrive, Moon } from "lucide-react";
-import { cardReveal, staggerContainer } from "@/lib/motion";
+import { Database, Boxes, Send, Package } from "lucide-react";
+import { SectionTitle } from "@/components/marketing/section-title";
 
-const FEATURES = [
+const PRODUCTS = [
   {
-    title: "Serverless Redis 7 Alpine",
-    desc: "Provisioning instan, image ringan, tanpa maintenance server sendiri.",
-    icon: Zap,
+    title: "Kasyaf Redis",
+    desc: "Serverless Redis 7, provisioning instan, REST API kompatibel Upstash SDK.",
+    icon: Database,
+    status: "live",
     span: "md:col-span-8",
   },
   {
-    title: "Qdrant Vector Search",
-    desc: "Vector database siap pakai buat embedding & semantic search.",
+    title: "Kasyaf Vector",
+    desc: "Vector database berbasis Qdrant — siap pakai untuk semantic search & RAG.",
     icon: Boxes,
+    status: "live",
     span: "md:col-span-4",
   },
   {
-    title: "REST API Compatible",
-    desc: "100% kompatibel sama Upstash SDK — tinggal ganti URL.",
-    icon: Plug,
+    title: "Kasyaf QStash",
+    desc: "Message queue & scheduler serverless, HTTP-based delivery dengan retry otomatis.",
+    icon: Send,
+    status: "soon",
     span: "md:col-span-4",
   },
   {
-    title: "Docker Compose 1 Click",
-    desc: "Jalanin seluruh stack lokal cukup satu perintah `docker compose up`.",
-    icon: Container,
+    title: "Kasyaf Box",
+    desc: "Object storage S3-compatible untuk file & asset — di roadmap kuartal berikutnya.",
+    icon: Package,
+    status: "roadmap",
     span: "md:col-span-8",
-  },
-  {
-    title: "Persistent Volume External",
-    desc: "Data aman nempel di external volume, survive restart & redeploy.",
-    icon: HardDrive,
-    span: "md:col-span-6",
-  },
-  {
-    title: "Dark Console Premium",
-    desc: "UI gelap, cepat, dan enak dipakai tiap hari buat debugging data.",
-    icon: Moon,
-    span: "md:col-span-6",
   },
 ];
 
+const STATUS_META = {
+  live: { label: "LIVE", dot: "●", cls: "bg-accent/10 text-accent border-accent/30" },
+  soon: { label: "COMING SOON", dot: "◐", cls: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
+  roadmap: { label: "ROADMAP", dot: "◌", cls: "bg-slate-500/10 text-slate-400 border-slate-500/30" },
+};
+
+function ProductCard({ product }) {
+  const ref = useRef(null);
+  const [tilt, setTilt] = useState({ rx: 0, ry: 0, glareX: 50, glareY: 50, active: false });
+  const Icon = product.icon;
+  const status = STATUS_META[product.status];
+  const isLive = product.status === "live";
+
+  function handleMouseMove(e) {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return;
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
+    setTilt({
+      rx: (0.5 - py) * 10,
+      ry: (px - 0.5) * 10,
+      glareX: px * 100,
+      glareY: py * 100,
+      active: true,
+    });
+  }
+
+  function handleMouseLeave() {
+    setTilt({ rx: 0, ry: 0, glareX: 50, glareY: 50, active: false });
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 80, scale: 0.9, rotateX: 15, filter: "blur(12px)" }}
+      whileInView={{ opacity: 1, y: 0, scale: 1, rotateX: 0, filter: "blur(0px)" }}
+      viewport={{ once: true, margin: "-10%" }}
+      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      className={`col-span-1 ${product.span} [perspective:1000px]`}
+    >
+      <div
+        ref={ref}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        style={{ transform: `rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)` }}
+        className={`relative overflow-hidden rounded-2xl md:rounded-3xl bg-white/[0.03] backdrop-blur-xl border p-6 md:p-8 transition-[transform,border-color,box-shadow] duration-300 ease-out hover:-translate-y-1 ${
+          isLive ? "border-white/[0.08] hover:border-accent/40 hover:shadow-lg hover:shadow-accent/5" : "border-white/[0.08] hover:border-white/20"
+        }`}
+      >
+        {tilt.active && (
+          <div
+            className="pointer-events-none absolute inset-0 opacity-60"
+            style={{
+              background: `radial-gradient(300px circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(255,255,255,0.08), transparent 70%)`,
+            }}
+          />
+        )}
+        <div className="relative flex items-center justify-between mb-4">
+          <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center">
+            <Icon size={18} className="text-accent" />
+          </div>
+          <span
+            className={`font-mono text-[10px] tracking-wide border rounded-full px-2.5 py-1 flex items-center gap-1 ${status.cls}`}
+          >
+            {status.dot} {status.label}
+          </span>
+        </div>
+        <h3 className="relative font-display font-semibold text-base md:text-lg text-white">{product.title}</h3>
+        <p className="relative mt-2 text-sm text-zinc-400">{product.desc}</p>
+      </div>
+    </motion.div>
+  );
+}
+
 export function BentoFeatures() {
   return (
-    <section id="features" className="max-w-6xl mx-auto px-4 md:px-6 py-20 md:py-28">
-      <motion.div
-        variants={cardReveal}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, margin: "-10%" }}
-        className="text-center mb-12 md:mb-16"
-      >
-        <span className="font-mono text-xs text-accent">FEATURES</span>
-        <h2 className="mt-3 text-3xl md:text-5xl font-display font-bold tracking-tight text-white text-balance">
-          Semua yang kamu butuh, satu console.
-        </h2>
-      </motion.div>
+    <section id="features" className="max-w-6xl mx-auto px-5 md:px-8 lg:px-12 py-20 md:py-28">
+      <div className="mb-12 md:mb-16">
+        <SectionTitle eyebrow="ECOSYSTEM & ROADMAP" title="Satu platform, semua data primitives." />
+      </div>
 
-      <motion.div
-        variants={staggerContainer(0.08)}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, margin: "-10%" }}
-        className="grid grid-cols-1 md:grid-cols-12 gap-4"
-      >
-        {FEATURES.map((f) => {
-          const Icon = f.icon;
-          return (
-            <motion.div
-              key={f.title}
-              variants={cardReveal}
-              whileHover={{ y: -4 }}
-              className={`col-span-1 ${f.span} rounded-2xl md:rounded-3xl bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] p-6 md:p-8 transition-colors hover:border-accent/30`}
-            >
-              <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center mb-4">
-                <Icon size={18} className="text-accent" />
-              </div>
-              <h3 className="font-display font-semibold text-base md:text-lg text-white">{f.title}</h3>
-              <p className="mt-2 text-sm text-zinc-400">{f.desc}</p>
-            </motion.div>
-          );
-        })}
-      </motion.div>
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-6">
+        {PRODUCTS.map((p) => (
+          <ProductCard key={p.title} product={p} />
+        ))}
+      </div>
     </section>
   );
 }

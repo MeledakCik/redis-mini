@@ -33,7 +33,7 @@ export function Navbar({ isLoggedIn }) {
         {/* RESPONSIVE FIX: menu tengah cuma tampil di layar lebar, mobile pakai radial FAB */}
         <div className="hidden md:flex items-center gap-6 text-sm text-zinc-300">
           {NAV_LINKS.map((l) => (
-            <a key={l.href} href={l.href} className="hover:text-white transition-colors">
+            <a key={l.href} href={l.href} className="hover:text-accent transition-colors">
               {l.label}
             </a>
           ))}

@@ -2,7 +2,14 @@ import { cn } from "@/lib/utils";
 
 export function Card({ className, children, ...props }) {
   return (
-    <div className={cn("bg-card2 border border-border rounded-xl shadow-card", className)} {...props}>
+    <div
+      className={cn(
+        // REDESIGN 2030: every card gets the same subtle lift + emerald border glow on hover
+        "bg-card2 border border-border rounded-xl shadow-card transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/30",
+        className
+      )}
+      {...props}
+    >
       {children}
     </div>
   );

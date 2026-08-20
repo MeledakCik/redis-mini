@@ -1,9 +1,8 @@
 "use client";
-import Link from "next/link";
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
 import { cardReveal } from "@/lib/motion";
+import { MagneticCta } from "@/components/marketing/magnetic-cta";
 
 export function FinalCta({ isLoggedIn }) {
   const ref = useRef(null);
@@ -20,7 +19,7 @@ export function FinalCta({ isLoggedIn }) {
   }
 
   return (
-    <section id="pricing" className="max-w-6xl mx-auto px-4 md:px-6 py-20 md:py-28">
+    <section id="pricing" className="max-w-6xl mx-auto px-5 md:px-8 lg:px-12 py-20 md:py-28">
       <motion.div
         ref={ref}
         onMouseMove={handleMouseMove}
@@ -30,7 +29,19 @@ export function FinalCta({ isLoggedIn }) {
         viewport={{ once: true, margin: "-10%" }}
         className="relative overflow-hidden rounded-3xl border border-accent/30 bg-black/60 px-6 py-16 md:py-24 text-center bg-grid-dots"
       >
-        {/* ANIMASI KASYAF: spotlight ngikutin cursor */}
+        {/* REDESIGN 2030: huge low-opacity "KASYAF" wordmark drifting slower than scroll */}
+        <motion.span
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 0.04 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.2 }}
+          aria-hidden
+          className="pointer-events-none select-none absolute inset-0 flex items-center justify-center font-display font-bold text-[22vw] leading-none text-white whitespace-nowrap"
+        >
+          KASYAF
+        </motion.span>
+
+        {/* spotlight ngikutin cursor */}
         <div
           className="pointer-events-none absolute inset-0 opacity-80 transition-[background] duration-150 hidden md:block"
           style={{
@@ -46,20 +57,13 @@ export function FinalCta({ isLoggedIn }) {
             Provisioning Redis & Vector DB dalam hitungan detik. Gak perlu kartu kredit buat mulai.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link
-              href={isLoggedIn ? "/databases" : "/register"}
-              className="w-full sm:w-auto h-11 px-7 rounded-full bg-accent text-black text-sm font-semibold flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(0,224,149,0.45)] hover:scale-[1.02] active:scale-[0.98] transition-transform"
-            >
+            <MagneticCta href={isLoggedIn ? "/databases" : "/register"} variant="solid">
               {isLoggedIn ? "Go to Dashboard" : "Get Started Free"}
-              <ArrowRight size={15} />
-            </Link>
+            </MagneticCta>
             {!isLoggedIn && (
-              <Link
-                href="/login"
-                className="w-full sm:w-auto h-11 px-7 rounded-full border border-white/15 text-sm text-zinc-200 flex items-center justify-center hover:bg-white/5 transition-colors"
-              >
+              <MagneticCta href="/login" variant="outline" showArrow={false}>
                 Login
-              </Link>
+              </MagneticCta>
             )}
           </div>
         </div>

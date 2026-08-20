@@ -38,3 +38,44 @@ html, body {
   background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
   background-size: 22px 22px;
 }
+
+/* REDESIGN 2030: mesh gradient — 3 blurred orbs (emerald / violet / cyan) behind the landing page */
+.bg-mesh-landing {
+  background-image:
+    radial-gradient(600px circle at 15% 10%, rgba(0, 224, 149, 0.16), transparent 60%),
+    radial-gradient(560px circle at 85% 25%, rgba(139, 92, 246, 0.14), transparent 60%),
+    radial-gradient(520px circle at 50% 85%, rgba(0, 245, 255, 0.10), transparent 60%);
+}
+
+/* REDESIGN 2030: subtle film-grain noise overlay, opacity locked low so it never distracts */
+.bg-noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* REDESIGN 2030: fade left/right edges of the marquee rows instead of a hard clip */
+.mask-fade-x {
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+
+/* REDESIGN 2030: animated conic border glow behind the hero terminal card */
+.conic-glow {
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from 0deg, #00e095, #00f5ff, #8b5cf6, #00e095);
+  animation: spin-slow 6s linear infinite;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.55;
+}
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}

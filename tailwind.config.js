@@ -8,13 +8,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        bg: "#0a0a0a",
+        bg: "#050507",
         card: "#141414",
         card2: "#171717",
         border: "#262626",
         accent: {
           DEFAULT: "#00e095",
           dark: "#00c17f",
+        },
+        glow: {
+          cyan: "#00F5FF",
+          violet: "#8B5CF6",
         },
         muted: "#8a8a8a",
       },
@@ -39,10 +43,20 @@ module.exports = {
           "0%": { transform: "translateX(0%)" },
           "100%": { transform: "translateX(-50%)" },
         },
+        marqueeReverse: {
+          "0%": { transform: "translateX(-50%)" },
+          "100%": { transform: "translateX(0%)" },
+        },
+        blinkCursor: {
+          "0%, 100%": { opacity: 1 },
+          "50%": { opacity: 0 },
+        },
       },
       animation: {
         pulseGlow: "pulseGlow 2s ease-in-out infinite",
         marquee: "marquee 20s linear infinite",
+        marqueeReverse: "marqueeReverse 22s linear infinite",
+        blinkCursor: "blinkCursor 0.9s step-end infinite",
       },
     },
   },

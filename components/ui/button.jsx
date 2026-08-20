@@ -1,5 +1,7 @@
 "use client";
 import { cn } from "@/lib/utils";
+import { useRipple } from "@/lib/use-ripple";
+import { RippleLayer } from "@/components/ripple-layer";
 
 const variants = {
   default: "bg-accent text-black hover:bg-accent-dark font-semibold",
@@ -16,12 +18,19 @@ const sizes = {
   icon: "h-8 w-8",
 };
 
-export function Button({ className, variant = "default", size = "default", disabled, children, ...props }) {
+export function Button({ className, variant = "default", size = "default", disabled, children, onMouseDown, ...props }) {
+  // REDESIGN 2030: every button ripples on click, on top of whatever variant styling it has.
+  const { ripples, addRipple } = useRipple();
+
   return (
     <button
       disabled={disabled}
+      onMouseDown={(e) => {
+        if (!disabled) addRipple(e);
+        onMouseDown?.(e);
+      }}
       className={cn(
-        "inline-flex items-center justify-center gap-1.5 rounded-lg transition-colors duration-150",
+        "relative overflow-hidden inline-flex items-center justify-center gap-1.5 rounded-lg transition-colors duration-150",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         variants[variant],
         sizes[size],
@@ -29,6 +38,7 @@ export function Button({ className, variant = "default", size = "default", disab
       )}
       {...props}
     >
+      {!disabled && <RippleLayer ripples={ripples} />}
       {children}
     </button>
   );

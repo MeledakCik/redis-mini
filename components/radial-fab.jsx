@@ -16,12 +16,12 @@ import { cn } from "@/lib/utils";
  */
 export function RadialFab({ items, triggerIcon: TriggerIcon, position = "bottom-center", triggerClassName }) {
   const [open, setOpen] = useState(false);
-  const [radius, setRadius] = useState(105);
+  const [radius, setRadius] = useState(100);
 
   // ANIMASI KASYAF: radius busur mengecil dikit di layar sangat sempit (<380px)
   useEffect(() => {
     function calc() {
-      setRadius(window.innerWidth < 380 ? 85 : 105);
+      setRadius(window.innerWidth < 380 ? 82 : 100);
     }
     calc();
     window.addEventListener("resize", calc);

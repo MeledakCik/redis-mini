@@ -16,16 +16,21 @@ export default async function LandingPage() {
   const isLoggedIn = !!session?.user;
 
   return (
-    <div className="min-h-screen bg-bg overflow-x-clip">
-      <Navbar isLoggedIn={isLoggedIn} />
-      <Hero isLoggedIn={isLoggedIn} />
-      <LogoMarquee />
-      <BentoFeatures />
-      <HowItWorks />
-      <Compatibility />
-      <StatsCounter />
-      <FinalCta isLoggedIn={isLoggedIn} />
-      <Footer />
+    <div className="relative min-h-screen bg-bg overflow-x-clip">
+      {/* REDESIGN 2030: mesh gradient + film-grain noise sit behind everything, non-interactive */}
+      <div className="pointer-events-none absolute inset-0 bg-mesh-landing" />
+      <div className="bg-noise" />
+      <div className="relative">
+        <Navbar isLoggedIn={isLoggedIn} />
+        <Hero isLoggedIn={isLoggedIn} />
+        <LogoMarquee />
+        <BentoFeatures />
+        <HowItWorks />
+        <Compatibility />
+        <StatsCounter />
+        <FinalCta isLoggedIn={isLoggedIn} />
+        <Footer />
+      </div>
     </div>
   );
 }
