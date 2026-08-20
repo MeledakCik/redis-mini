@@ -1,9 +1,5 @@
 import { NextResponse } from "next/server";
 
-// BAGIAN D: "/" (landing) dan "/login" publik by design — keduanya sengaja TIDAK
-// dimasukkan ke matcher di bawah, jadi middleware ini gak pernah jalan buat mereka.
-// "/" sendiri menentukan CTA (Login vs Go to Dashboard) lewat auth() di server component,
-// bukan lewat redirect paksa di sini.
 const PROTECTED_PAGES = ["/databases", "/vector", "/billing", "/connect"];
 
 export function middleware(req) {
@@ -14,32 +10,36 @@ export function middleware(req) {
     req.cookies.get('__Secure-authjs.session-token')?.value ||
     req.cookies.get('next-auth.session-token')?.value;
 
-  const isLoggedIn =!!token;
+  const isLoggedIn = !!token;
 
   const isApi = pathname.startsWith("/api/");
   const isAuthApi = pathname.startsWith("/api/auth/");
-  // /api/config publik (dipakai form Create Database buat tau mode docker/external
-  // SEBELUM user login juga gak masalah, gak ada data sensitif di response-nya).
   const isPublicApi = pathname === "/api/config";
-  // FIX: allow both redis and vector exec pakai Bearer token
   const isExecApi = /^\/api\/(redis|vector)\/[^\/]+\/exec$/.test(pathname);
   const isProtectedPage = PROTECTED_PAGES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
+  let res = NextResponse.next();
+
+  // --- SECURITY HEADERS DI MIDDLEWARE JUGA (defense in depth) ---
+  res.headers.set("X-Frame-Options", "SAMEORIGIN");
+  res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+
   if (isExecApi) {
-    const hasBearer = req.headers.get("authorization")?.startsWith("Bearer ") ||!!req.headers.get("x-vector-token");
-    if (hasBearer) return NextResponse.next();
+    const hasBearer = req.headers.get("authorization")?.startsWith("Bearer ") || !!req.headers.get("x-vector-token");
+    if (hasBearer) return res;
   }
 
-  if (isPublicApi) return NextResponse.next();
+  if (isPublicApi) return res;
 
-  if (isApi &&!isAuthApi) {
-    if (!isLoggedIn &&!isExecApi) {
+  if (isApi && !isAuthApi) {
+    if (!isLoggedIn && !isExecApi) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    return NextResponse.next();
+    return res;
   }
 
-  if (isProtectedPage &&!isLoggedIn) {
+  if (isProtectedPage && !isLoggedIn) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
@@ -49,7 +49,7 @@ export function middleware(req) {
     return NextResponse.redirect(new URL("/databases", req.nextUrl.origin));
   }
 
-  return NextResponse.next();
+  return res;
 }
 
 export const config = {

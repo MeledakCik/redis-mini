@@ -2,19 +2,40 @@
 const nextConfig = {
   reactStrictMode: true,
   eslint: { ignoreDuringBuilds: true },
-  // Task 2: build standalone server (.next/standalone) supaya Dockerfile bisa COPY hasil
-  // build minimal (tanpa seluruh node_modules) — dipakai baik di image VPS (docker-compose)
-  // maupun Railway (nixpacks + Dockerfile sama-sama jalanin `node server.js`).
   output: "standalone",
   webpack: (config) => {
-    // dockerode -> docker-modem -> ssh2 punya optional native deps (dipakai utk koneksi ssh://)
-    // kita cuma konek ke local docker socket, jadi aman untuk diabaikan biar build bersih.
     config.resolve.alias = {
       ...config.resolve.alias,
       "cpu-features": false,
       "./crypto/build/Release/sshcrypto.node": false,
     };
     return config;
+  },
+  // --- TAMBAHAN SECURITY A+ ---
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-XSS-Protection", value: "1; mode=block" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+          // CSP longgar buat Next.js + vercel.live, nanti bisa di-ketat-in lagi
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://*.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https: wss: https://vitals.vercel-insights.com; frame-ancestors 'self';" }
+        ],
+      },
+      {
+        // Hardening khusus API - jangan di-cache + no sniff
+        source: "/api/:path*",
+        headers: [
+          { key: "Cache-Control", value: "no-store, max-age=0" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+        ],
+      },
+    ];
   },
 };
 
