@@ -26,6 +26,9 @@ export function middleware(req) {
   const isAuthApi = pathname.startsWith("/api/auth/"); // NextAuth handlers (google/github/credentials callback) - selalu bypass
   const isPublicApi = pathname === "/api/config";
   const isExecApi = /^\/api\/(redis|vector)\/[^\/]+\/exec$/.test(pathname); // REST API pakai Bearer, bukan cookie
+  // Payment gateway: notifikasi Midtrans dipanggil server-to-server, gak bisa kirim cookie
+  // session. Keamanannya bukan dari sini — lihat verifyNotificationSignature() di route-nya.
+  const isBillingWebhook = pathname === "/api/billing/webhook";
   const isProtectedPage = PROTECTED_PAGES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   const isPublicPage = PUBLIC_PAGES.some((p) => pathname === p);
 
@@ -39,6 +42,24 @@ export function middleware(req) {
   res.headers.set("X-XSS-Protection", "0"); // legacy header, sengaja dimatiin - lebih rawan exploit daripada guna
   if (process.env.NODE_ENV === "production") {
     res.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains");
+  }
+
+  // --- ANTI-DDOS: rate limit umum per-IP untuk SEMUA /api/* ---
+  // Ini lapisan kedua (defense-in-depth) setelah limit_req di nginx.conf. nginx nolak
+  // request sebelum sampai proses Node sama sekali (lebih murah CPU-nya buat volumetric
+  // flood); layer ini nge-cover kasus di belakang load balancer lain / bypass nginx lokal,
+  // dan juga jalan pas `npm run dev` tanpa nginx di depannya.
+  // Endpoint yang udah py auth guard sendiri (login, register, webhook) dikecualikan di sini
+  // biar gak double-count / gak nge-block notifikasi Midtrans yang sah.
+  if (isApi && pathname !== "/api/auth/callback/credentials" && pathname !== "/api/auth/register" && !isBillingWebhook) {
+    const ip = getIp(req);
+    const rl = checkRateLimit(`api-ip:${ip}`, { max: 120, windowMs: 60 * 1000, lockoutMs: 2 * 60 * 1000 });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak request. Coba lagi nanti." },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)) } }
+      );
+    }
   }
 
   // Defense-in-depth: throttle per-IP ke endpoint credentials callback SEBELUM
@@ -76,6 +97,8 @@ export function middleware(req) {
   }
 
   if (isPublicApi) return res;
+
+  if (isBillingWebhook) return res; // signature Midtrans divalidasi di dalam route handler-nya
 
   // /api/auth/* (signin, callback google/github, session, csrf, dll) selalu bypass guard
   if (isApi && !isAuthApi) {

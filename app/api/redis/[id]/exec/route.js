@@ -41,15 +41,18 @@ export async function POST(req, { params }) {
   const bearerToken = authHeader.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || "";
 
   let inst = null;
+  let userEmail = null; // dipakai buat plan-aware storage limit (Pro vs Free) — lihat lib/quota.js
 
   if (bearerToken) {
-    // Mode (b): REST API / Postman — tanpa user, cukup id + token yang cocok.
+    // Mode (b): REST API / Postman — tanpa user, cukup id + token yang cocok. Gak ada email
+    // session di mode ini, jadi storage limit fallback ke Free tier (lihat lib/quota.js).
     inst = getInstance(id);
   } else {
     // Mode (a): Data Browser / CLI di browser — wajib session login.
     try {
       const user = await requireUser();
       inst = getInstanceForUser(id, user.id);
+      userEmail = user.email;
     } catch {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -76,7 +79,7 @@ export async function POST(req, { params }) {
 
   // Task 3: storage limit 500MB/akun — cuma dicek untuk command yang nambah data baru.
   if (WRITE_COMMANDS.has(command.toUpperCase())) {
-    const storage = await assertStorageAvailable(inst.userId);
+    const storage = await assertStorageAvailable(inst.userId, userEmail);
     if (!storage.allowed) {
       return NextResponse.json(storage.response, { status: 403 });
     }

@@ -54,7 +54,7 @@ export async function POST(req) {
   }
 
   // Task 3: free tier = 1 Vector database per akun.
-  const quota = canCreateInstance(user.id, "vector");
+  const quota = canCreateInstance(user.id, "vector", user.email);
   if (!quota.allowed) {
     return NextResponse.json(limitResponse(quota.reason, { count: quota.count }), { status: 403 });
   }
