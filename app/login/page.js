@@ -125,10 +125,10 @@ function LoginForm() {
               variant="outline"
               className="w-full justify-center gap-2"
               disabled={oauthLoading !== null}
-              onClick={() => handleOAuth("github")}
+              onClick={() => handleOAuth("github-custom")}
             >
-              {oauthLoading === "github" ? <Loader2 size={14} className="animate-spin" /> : <GithubIcon />}
-              {oauthLoading === "github" ? "Redirecting..." : "Continue with GitHub"}
+              {oauthLoading === "github-custom" ? <Loader2 size={14} className="animate-spin" /> : <GithubIcon />}
+              {oauthLoading === "github-custom" ? "Redirecting..." : "Continue with GitHub"}
             </Button>
           </div>
 
