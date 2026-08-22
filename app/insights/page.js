@@ -1,3 +1,4 @@
+"use client";
 import { FileWarning } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
