@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Plus, Database, MoreVertical, Circle, Lock } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
@@ -10,17 +9,17 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreateDatabaseDialog } from "@/components/create-database-dialog";
-import { QuotaBanner } from "@/components/quota-banner";
 import { formatBytes, timeAgo } from "@/lib/utils";
 import { cardReveal, staggerContainer } from "@/lib/motion";
 
+// FREE MODE: satu-satunya plan yang ada, 1 Redis database per akun (lihat lib/quota.js).
+const FREE_TIER_LIMIT = 1;
+
 export default function DatabasesPage() {
-  const router = useRouter();
   const [instances, setInstances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [error, setError] = useState("");
-  const [quota, setQuota] = useState(null);
 
   async function load() {
     try {
@@ -36,34 +35,19 @@ export default function DatabasesPage() {
     }
   }
 
-  async function loadQuota() {
-    try {
-      const res = await fetch("/api/quota");
-      if (res.ok) setQuota(await res.json());
-    } catch {}
-  }
-
   useEffect(() => {
     load();
-    loadQuota();
     const t1 = setInterval(load, 4000);
-    const t2 = setInterval(loadQuota, 8000);
-    return () => {
-      clearInterval(t1);
-      clearInterval(t2);
-    };
+    return () => clearInterval(t1);
   }, []);
 
-  // Task 3: user lama yang udah punya >1 database sebelum limit diterapkan gak dihapus,
-  // tapi gak boleh bikin baru lagi sampai delete/upgrade.
-  const redisLimitReached = quota ? quota.redis.count >= quota.redis.limit : false;
-  const hasLegacyOverflow = quota && quota.redis.count > quota.redis.limit;
+  // Akun lama yang udah punya >1 database sebelum limit diterapkan gak dihapus,
+  // tapi gak boleh bikin baru lagi sampai delete.
+  const redisLimitReached = instances.length >= FREE_TIER_LIMIT;
+  const hasLegacyOverflow = instances.length > FREE_TIER_LIMIT;
 
   function handleCreateClick() {
-    if (redisLimitReached) {
-      router.push("/billing");
-      return;
-    }
+    if (redisLimitReached) return;
     setDialogOpen(true);
   }
 
@@ -86,16 +70,14 @@ export default function DatabasesPage() {
               className="w-full sm:w-auto"
             >
               {redisLimitReached ? <Lock size={15} /> : <Plus size={15} />}
-              {redisLimitReached ? `Limit Reached (${quota.redis.count}/${quota.redis.limit})` : "Create Database"}
+              {redisLimitReached ? `Limit Reached (${instances.length}/${FREE_TIER_LIMIT})` : "Create Database"}
             </Button>
           </div>
 
-          <QuotaBanner quota={quota} />
-
           {hasLegacyOverflow && (
             <div className="mb-5 bg-blue-950/30 border border-blue-900/50 text-blue-200 text-xs rounded-lg px-4 py-3">
-              You have {quota.redis.count} databases from before limit, you can keep them but can't create new one
-              until you delete or upgrade.
+              You have {instances.length} databases from before the free tier limit — you can keep them, but can't
+              create a new one until you delete one.
             </div>
           )}
 
@@ -164,10 +146,7 @@ export default function DatabasesPage() {
       <CreateDatabaseDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        onCreated={() => {
-          load();
-          loadQuota();
-        }}
+        onCreated={load}
       />
     </div>
   );

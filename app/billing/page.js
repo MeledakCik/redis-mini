@@ -1,8 +1,7 @@
 "use client";
-import { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { Check, Sparkles, Database, Boxes, HardDrive, Crown, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Check, Sparkles, Database, Boxes, HardDrive, Crown, Clock, Copy, CheckCircle2, Loader2 } from "lucide-react";
 import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from "recharts";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
@@ -39,42 +38,141 @@ function UsageRing({ label, icon: Icon, count, limit, colorClass = "#00e095" }) 
   );
 }
 
-function CheckoutNotice() {
-  const params = useSearchParams();
-  const status = params.get("checkout");
-  if (!status) return null;
+function formatIDR(n) {
+  return new Intl.NumberFormat("id-ID").format(n);
+}
 
-  const map = {
-    finish: { icon: CheckCircle2, text: "Pembayaran diterima Midtrans. Status Pro akan aktif begitu webhook diproses (biasanya instan).", variant: "green" },
-    pending: { icon: AlertTriangle, text: "Pembayaran masih pending. Selesaikan dulu di metode pembayaran yang kamu pilih.", variant: "yellow" },
-    error: { icon: AlertTriangle, text: "Pembayaran gagal atau dibatalkan. Coba lagi kapan saja.", variant: "red" },
-  };
-  const item = map[status];
-  if (!item) return null;
-  const Icon = item.icon;
+function useCountdown(expiresAt) {
+  const [msLeft, setMsLeft] = useState(() => (expiresAt ? new Date(expiresAt).getTime() - Date.now() : 0));
+  useEffect(() => {
+    if (!expiresAt) return;
+    const id = setInterval(() => setMsLeft(new Date(expiresAt).getTime() - Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+  if (msLeft <= 0) return "00:00";
+  const mm = String(Math.floor(msLeft / 60000)).padStart(2, "0");
+  const ss = String(Math.floor((msLeft % 60000) / 1000)).padStart(2, "0");
+  return `${mm}:${ss}`;
+}
+
+// Kartu instruksi transfer manual: nominal WAJIB persis (termasuk kode unik 3 digit
+// di belakang) karena itu satu-satunya cara webhook Moota mencocokkan mutasi masuk
+// ke order ini. Polling /api/billing/status tiap 4 detik nunggu status berubah jadi
+// "paid" (otomatis begitu Moota deteksi mutasi & webhook diproses).
+function PendingPaymentCard({ order, onPaid, onExpired }) {
+  const countdown = useCountdown(order.expiresAt);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/billing/status?orderId=${encodeURIComponent(order.orderId)}`);
+        const data = await res.json();
+        if (data?.plan?.name === "pro" || data?.order?.status === "paid") {
+          onPaid();
+        } else if (data?.order?.status === "expired" || !data?.order) {
+          onExpired();
+        }
+      } catch {
+        // network hiccup, coba lagi di tick berikutnya
+      }
+    }, 4000);
+    return () => clearInterval(id);
+  }, [order.orderId, onPaid, onExpired]);
+
+  function copyAmount() {
+    navigator.clipboard.writeText(String(order.grossAmount)).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
+  const bank = order.destination?.bank;
 
   return (
-    <div className="max-w-lg mx-auto mb-6 flex items-start gap-2.5 text-sm text-zinc-300 bg-card2 border border-border rounded-xl p-3.5">
-      <Icon size={16} className="shrink-0 mt-0.5 text-accent" />
-      <p>{item.text}</p>
-    </div>
+    <Card className="max-w-lg mx-auto mb-8 p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <Loader2 size={16} className="text-accent animate-spin" />
+        <h3 className="text-sm font-semibold text-zinc-100">Menunggu pembayaran</h3>
+        <span className="ml-auto flex items-center gap-1 text-xs text-zinc-500 mono">
+          <Clock size={12} /> {countdown}
+        </span>
+      </div>
+
+      <p className="text-xs text-zinc-500 mb-4">
+        Transfer <span className="text-zinc-300 font-medium">persis sesuai nominal</span> di bawah (termasuk 3 digit terakhir).
+        Status Pro aktif otomatis begitu mutasi terdeteksi — tidak perlu konfirmasi manual.
+      </p>
+
+      <div className="bg-card2 border border-border rounded-xl p-4 mb-4">
+        <p className="text-[11px] text-zinc-500 mb-1">Jumlah transfer</p>
+        <div className="flex items-center gap-2">
+          <p className="text-2xl font-bold text-accent mono">Rp{formatIDR(order.grossAmount)}</p>
+          <button
+            onClick={copyAmount}
+            className="ml-auto flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-200 border border-border rounded-lg px-2 py-1"
+          >
+            {copied ? <CheckCircle2 size={12} className="text-accent" /> : <Copy size={12} />}
+            {copied ? "Tersalin" : "Salin"}
+          </button>
+        </div>
+        <p className="text-[11px] text-zinc-600 mt-1">
+          Rp{formatIDR(order.grossAmount - order.uniqueCode)} + kode unik {order.uniqueCode}
+        </p>
+      </div>
+
+      {bank?.accountNumber && (
+        <div className="flex items-center justify-between text-sm mb-3 px-1">
+          <span className="text-zinc-500">Transfer bank</span>
+          <span className="text-zinc-200 mono">
+            {bank.bankName} {bank.accountNumber} a.n {bank.accountName}
+          </span>
+        </div>
+      )}
+
+      {order.destination?.qrisImageUrl && (
+        <div className="flex flex-col items-center gap-2 mt-2">
+          <p className="text-[11px] text-zinc-500">atau scan QRIS</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={order.destination.qrisImageUrl} alt="QRIS" className="w-40 h-40 object-contain rounded-lg border border-border bg-white p-2" />
+        </div>
+      )}
+    </Card>
   );
 }
 
 export default function BillingPage() {
   const [quota, setQuota] = useState(null);
+  const [order, setOrder] = useState(null);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [justPaid, setJustPaid] = useState(false);
   const [error, setError] = useState("");
+  const bootstrapped = useRef(false);
 
-  useEffect(() => {
+  const refreshQuota = useCallback(() => {
     fetch("/api/quota")
       .then((r) => r.json())
       .then(setQuota)
       .catch(() => {});
   }, []);
 
-  // Redirect flow: server bikin transaksi Midtrans, kita cuma pindah ke redirect_url
-  // yang Midtrans kasih balik — status final tetap dikonfirmasi lewat webhook server-to-server.
+  useEffect(() => {
+    refreshQuota();
+  }, [refreshQuota]);
+
+  // Kalau user reload halaman sementara masih ada order pending, tampilkan lagi
+  // kartu instruksi transfernya (jangan hilang cuma karena refresh).
+  useEffect(() => {
+    if (bootstrapped.current) return;
+    bootstrapped.current = true;
+    fetch("/api/billing/status")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.order && data.order.status === "pending") setOrder(data.order);
+      })
+      .catch(() => {});
+  }, []);
+
   async function handleUpgrade() {
     setError("");
     setCheckingOut(true);
@@ -82,12 +180,31 @@ export default function BillingPage() {
       const res = await fetch("/api/billing/checkout", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Gagal memulai checkout");
-      window.location.href = data.redirectUrl;
+      setOrder({
+        orderId: data.orderId,
+        grossAmount: data.grossAmount,
+        uniqueCode: data.uniqueCode,
+        expiresAt: data.expiresAt,
+        destination: data.destination,
+        status: "pending",
+      });
     } catch (err) {
       setError(err.message);
+    } finally {
       setCheckingOut(false);
     }
   }
+
+  const handlePaid = useCallback(() => {
+    setOrder(null);
+    setJustPaid(true);
+    refreshQuota();
+  }, [refreshQuota]);
+
+  const handleExpired = useCallback(() => {
+    setOrder(null);
+    setError("Waktu pembayaran habis. Silakan checkout ulang.");
+  }, []);
 
   const isPro = quota?.plan?.name === "pro";
 
@@ -103,9 +220,14 @@ export default function BillingPage() {
             <p className="text-sm text-zinc-500 mt-2">Free plan cocok untuk development & evaluasi sebelum scale up ke production.</p>
           </div>
 
-          <Suspense fallback={null}>
-            <CheckoutNotice />
-          </Suspense>
+          {justPaid && (
+            <div className="max-w-lg mx-auto mb-6 flex items-start gap-2.5 text-sm text-zinc-300 bg-card2 border border-border rounded-xl p-3.5">
+              <CheckCircle2 size={16} className="shrink-0 mt-0.5 text-accent" />
+              <p>Pembayaran terdeteksi otomatis. Pro plan sudah aktif.</p>
+            </div>
+          )}
+
+          {order && <PendingPaymentCard order={order} onPaid={handlePaid} onExpired={handleExpired} />}
 
           {isPro && quota?.plan?.expiresAt && (
             <div className="max-w-lg mx-auto mb-6 flex items-center gap-2.5 text-sm bg-accent/10 border border-accent/30 rounded-xl p-3.5">
@@ -179,14 +301,14 @@ export default function BillingPage() {
                     </li>
                   ))}
                 </ul>
-                <Button className="w-full mt-6" onClick={handleUpgrade} disabled={checkingOut || isPro}>
+                <Button className="w-full mt-6" onClick={handleUpgrade} disabled={checkingOut || isPro || !!order}>
                   <Sparkles size={14} />
-                  {isPro ? "Sudah Pro" : checkingOut ? "Membuka pembayaran..." : "Upgrade to Pro"}
+                  {isPro ? "Sudah Pro" : checkingOut ? "Menyiapkan pembayaran..." : order ? "Menunggu pembayaran" : "Upgrade to Pro"}
                 </Button>
                 {error && <p className="text-[11px] text-red-400 mt-2 text-center">{error}</p>}
-                {!isPro && (
+                {!isPro && !order && (
                   <p className="text-[11px] text-zinc-500 mt-2 text-center">
-                    Dibayar via Midtrans (QRIS, VA, kartu, e-wallet). Kamu akan diarahkan ke halaman pembayaran Midtrans.
+                    Transfer bank atau QRIS langsung, terdeteksi & aktif otomatis — tanpa redirect ke pihak ketiga.
                   </p>
                 )}
               </Card>

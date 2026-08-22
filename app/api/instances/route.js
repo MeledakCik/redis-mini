@@ -50,8 +50,8 @@ export async function POST(req) {
     return authErrorResponse(err);
   }
 
-  // Free tier: 1 Redis database per akun, Pro: 20 (lihat lib/quota.js / halaman Billing untuk upgrade).
-  const quota = canCreateInstance(user.id, "redis", user.email);
+  // FREE MODE: 1 Redis database per akun (lihat lib/quota.js — FREE_TIER_LIMIT).
+  const quota = canCreateInstance(user.id, "redis");
   if (!quota.allowed) {
     return NextResponse.json(limitResponse(quota.reason, { count: quota.count }), { status: 403 });
   }

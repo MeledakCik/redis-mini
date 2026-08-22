@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 
-const PROTECTED_PAGES = ["/databases", "/vector", "/billing", "/connect"];
+const PROTECTED_PAGES = ["/databases", "/vector", "/connect"];
 const PUBLIC_PAGES = ["/login", "/register", "/unauthorized"];
+
+// Origin VPS ini TIDAK boleh diakses langsung by IP — cuma lewat Cloudflare
+// (nginx sudah percaya CF-Connecting-IP lewat set_real_ip_from, lihat nginx.conf).
+// Kalau request datang dengan Host header = IP mentah ini, berarti DNS/Cloudflare
+// di-skip (client hit origin langsung) -> tolak. Lihat docs/CLOUDFLARE_SETUP.md.
+const ORIGIN_IP = "103.92.215.180";
 
 function getIp(req) {
   return (
+    req.headers.get("cf-connecting-ip")?.trim() ||
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     req.headers.get("x-real-ip") ||
     "unknown"
@@ -14,6 +21,12 @@ function getIp(req) {
 
 export function middleware(req) {
   const { pathname } = req.nextUrl;
+
+  // --- ANTI-DDOS / ORIGIN LOCK: tolak akses langsung ke IP origin, cuma lewat Cloudflare ---
+  const host = req.headers.get("host") || "";
+  if (host.includes(ORIGIN_IP)) {
+    return NextResponse.json({ error: "Direct origin access is not allowed." }, { status: 403 });
+  }
 
   const token =
     req.cookies.get("authjs.session-token")?.value ||
@@ -26,9 +39,6 @@ export function middleware(req) {
   const isAuthApi = pathname.startsWith("/api/auth/"); // NextAuth handlers (google/github/credentials callback) - selalu bypass
   const isPublicApi = pathname === "/api/config";
   const isExecApi = /^\/api\/(redis|vector)\/[^\/]+\/exec$/.test(pathname); // REST API pakai Bearer, bukan cookie
-  // Payment gateway: notifikasi Midtrans dipanggil server-to-server, gak bisa kirim cookie
-  // session. Keamanannya bukan dari sini — lihat verifyNotificationSignature() di route-nya.
-  const isBillingWebhook = pathname === "/api/billing/webhook";
   const isProtectedPage = PROTECTED_PAGES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   const isPublicPage = PUBLIC_PAGES.some((p) => pathname === p);
 
@@ -49,9 +59,9 @@ export function middleware(req) {
   // request sebelum sampai proses Node sama sekali (lebih murah CPU-nya buat volumetric
   // flood); layer ini nge-cover kasus di belakang load balancer lain / bypass nginx lokal,
   // dan juga jalan pas `npm run dev` tanpa nginx di depannya.
-  // Endpoint yang udah py auth guard sendiri (login, register, webhook) dikecualikan di sini
-  // biar gak double-count / gak nge-block notifikasi Midtrans yang sah.
-  if (isApi && pathname !== "/api/auth/callback/credentials" && pathname !== "/api/auth/register" && !isBillingWebhook) {
+  // Endpoint yang udah py auth guard sendiri (login, register) dikecualikan di sini
+  // biar gak double-count.
+  if (isApi && pathname !== "/api/auth/callback/credentials" && pathname !== "/api/auth/register") {
     const ip = getIp(req);
     const rl = checkRateLimit(`api-ip:${ip}`, { max: 120, windowMs: 60 * 1000, lockoutMs: 2 * 60 * 1000 });
     if (!rl.allowed) {
@@ -98,8 +108,6 @@ export function middleware(req) {
 
   if (isPublicApi) return res;
 
-  if (isBillingWebhook) return res; // signature Midtrans divalidasi di dalam route handler-nya
-
   // /api/auth/* (signin, callback google/github, session, csrf, dll) selalu bypass guard
   if (isApi && !isAuthApi) {
     if (!isLoggedIn && !isExecApi) {
@@ -126,5 +134,5 @@ export function middleware(req) {
 }
 
 export const config = {
-  matcher: ["/databases/:path*", "/vector/:path*", "/api/:path*", "/login", "/register", "/unauthorized"],
+  matcher: ["/", "/databases/:path*", "/vector/:path*", "/api/:path*", "/login", "/register", "/unauthorized", "/connect/:path*"],
 };

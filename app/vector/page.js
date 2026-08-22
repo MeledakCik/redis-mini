@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Plus, Boxes, MoreVertical, Circle, Lock } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
@@ -10,17 +9,17 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreateVectorDatabaseDialog } from "@/components/create-vector-database-dialog";
-import { QuotaBanner } from "@/components/quota-banner";
 import { timeAgo } from "@/lib/utils";
 import { cardReveal, staggerContainer } from "@/lib/motion";
 
+// FREE MODE: satu-satunya plan yang ada, 1 Vector database per akun (lihat lib/quota.js).
+const FREE_TIER_LIMIT = 1;
+
 export default function VectorPage() {
-  const router = useRouter();
   const [instances, setInstances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [error, setError] = useState("");
-  const [quota, setQuota] = useState(null);
 
   async function load() {
     try {
@@ -36,32 +35,17 @@ export default function VectorPage() {
     }
   }
 
-  async function loadQuota() {
-    try {
-      const res = await fetch("/api/quota");
-      if (res.ok) setQuota(await res.json());
-    } catch {}
-  }
-
   useEffect(() => {
     load();
-    loadQuota();
     const t1 = setInterval(load, 4000);
-    const t2 = setInterval(loadQuota, 8000);
-    return () => {
-      clearInterval(t1);
-      clearInterval(t2);
-    };
+    return () => clearInterval(t1);
   }, []);
 
-  const vectorLimitReached = quota ? quota.vector.count >= quota.vector.limit : false;
-  const hasLegacyOverflow = quota && quota.vector.count > quota.vector.limit;
+  const vectorLimitReached = instances.length >= FREE_TIER_LIMIT;
+  const hasLegacyOverflow = instances.length > FREE_TIER_LIMIT;
 
   function handleCreateClick() {
-    if (vectorLimitReached) {
-      router.push("/billing");
-      return;
-    }
+    if (vectorLimitReached) return;
     setDialogOpen(true);
   }
 
@@ -83,16 +67,14 @@ export default function VectorPage() {
               className="w-full sm:w-auto"
             >
               {vectorLimitReached ? <Lock size={15} /> : <Plus size={15} />}
-              {vectorLimitReached ? `Limit Reached (${quota.vector.count}/${quota.vector.limit})` : "Create Vector Database"}
+              {vectorLimitReached ? `Limit Reached (${instances.length}/${FREE_TIER_LIMIT})` : "Create Vector Database"}
             </Button>
           </div>
 
-          <QuotaBanner quota={quota} />
-
           {hasLegacyOverflow && (
             <div className="mb-5 bg-blue-950/30 border border-blue-900/50 text-blue-200 text-xs rounded-lg px-4 py-3">
-              You have {quota.vector.count} databases from before limit, you can keep them but can't create new one
-              until you delete or upgrade.
+              You have {instances.length} databases from before the free tier limit — you can keep them, but can't
+              create a new one until you delete one.
             </div>
           )}
 
@@ -157,14 +139,7 @@ export default function VectorPage() {
         </main>
       </div>
 
-      <CreateVectorDatabaseDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onCreated={() => {
-          load();
-          loadQuota();
-        }}
-      />
+      <CreateVectorDatabaseDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onCreated={load} />
     </div>
   );
 }

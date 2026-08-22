@@ -1,6 +1,5 @@
 "use client";
 import { useRef, useState } from "react";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { cardReveal } from "@/lib/motion";
 import { MagneticCta } from "@/components/marketing/magnetic-cta";
@@ -67,9 +66,6 @@ export function FinalCta({ isLoggedIn }) {
               </MagneticCta>
             )}
           </div>
-          <Link href="/pricing" className="inline-block mt-5 text-xs text-zinc-500 hover:text-accent transition-colors underline underline-offset-4">
-            Lihat detail pricing & FAQ &rarr;
-          </Link>
         </div>
       </motion.div>
     </section>

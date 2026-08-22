@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Boxes, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,6 @@ const METRICS = [
 ];
 
 export function CreateVectorDatabaseDialog({ open, onClose, onCreated }) {
-  const router = useRouter();
   const [name, setName] = useState("");
   const [dimension, setDimension] = useState(1536);
   const [metric, setMetric] = useState("cosine");
@@ -32,11 +30,9 @@ export function CreateVectorDatabaseDialog({ open, onClose, onCreated }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        // Task 3: 403 LIMIT_REACHED -> arahkan ke /billing alih-alih cuma nampilin error text
+        // FREE MODE: 403 LIMIT_REACHED -> tampilkan pesan error, gak ada /billing lagi.
         if (res.status === 403 && data.error === "LIMIT_REACHED") {
-          onClose();
-          router.push(data.upgradeUrl || "/billing");
-          return;
+          throw new Error(data.message || "Free tier limit reached.");
         }
         throw new Error(data.error || "Gagal membuat vector database");
       }

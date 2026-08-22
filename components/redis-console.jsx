@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import {
   Info, TableProperties, TerminalSquare, Globe, LineChart as LineChartIcon, Archive,
-  RotateCw, Trash2, Eraser, Sparkles, Circle, Loader2,
+  RotateCw, Trash2, Eraser, Circle, Loader2,
 } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
 import { OverviewCards } from "@/components/overview-cards";
-import { StorageUsageCard } from "@/components/storage-usage-card";
 import { ConnectionSection } from "@/components/connection-section";
 import { MetricsCharts } from "@/components/metrics-chart";
 import { DataBrowser } from "@/components/data-browser";
@@ -199,9 +198,6 @@ export function RedisConsole({ id, embedded = false }) {
               <Button size="sm" variant="subtle" onClick={handleFlush} disabled={busy || isRateLimited} className="shrink-0">
                 <Eraser size={13} /> Flush
               </Button>
-              <Button size="sm" variant="subtle" disabled title="Fitur upgrade — lihat halaman Billing" className="shrink-0">
-                <Sparkles size={13} /> Upgrade
-              </Button>
               <Button size="sm" variant="danger" onClick={handleDelete} disabled={busy || isRateLimited} className="shrink-0">
                 <Trash2 size={13} /> Delete
               </Button>
@@ -231,7 +227,6 @@ export function RedisConsole({ id, embedded = false }) {
               {tab === "details" && (
                 <div className="space-y-5">
                   <OverviewCards instance={instance} stats={stats} />
-                  <StorageUsageCard />
                   <ConnectionSection instance={instance} />
                   <MetricsCharts history={history} />
                 </div>

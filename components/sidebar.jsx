@@ -4,7 +4,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Database, Boxes, CreditCard, KeyRound, LogOut, Menu, X } from "lucide-react";
+import { Database, Boxes, KeyRound, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +12,6 @@ const menu = [
   { label: "Databases", icon: Database, href: "/databases" },
   { label: "Vector", icon: Boxes, href: "/vector" },
   { label: "API Keys", icon: KeyRound, href: "/connect" },
-  { label: "Billing", icon: CreditCard, href: "/billing" },
 ];
 
 function SidebarContent({ pathname, session, onNavigate }) {

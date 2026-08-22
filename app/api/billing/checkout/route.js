@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireUser, authErrorResponse } from "@/lib/auth-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { createSnapTransaction } from "@/lib/midtrans";
+import { createOrGetPendingOrder, sweepExpiredOrders } from "@/lib/orders-store";
+import { getPaymentDestination } from "@/lib/manual-payment";
 import { getPlan } from "@/lib/plan-store";
 
-const PRO_PRICE_IDR = 149000; // ~$9/mo, dibulatkan buat harga IDR yang wajar (Midtrans = IDR only)
+const PRO_PRICE_IDR = 149000; // harga dasar, nominal final = ini + kode unik 3 digit
 
 export async function POST() {
   let user;
@@ -18,8 +19,8 @@ export async function POST() {
     return NextResponse.json({ error: "Akun tidak punya email, tidak bisa checkout." }, { status: 400 });
   }
 
-  // Defense-in-depth (selain limit_req di nginx.conf): cegah user spam create-transaction
-  // ke Midtrans, yang bisa numpuk order pending di dashboard Midtrans mereka.
+  // Defense-in-depth (selain limit_req di nginx.conf): cegah user spam bikin order
+  // pending, yang bisa numpuk kode unik nominal kepake sia-sia.
   const rl = checkRateLimit(`billing:checkout:${user.id}`, { max: 5, windowMs: 10 * 60 * 1000, lockoutMs: 10 * 60 * 1000 });
   if (!rl.allowed) {
     return NextResponse.json(
@@ -33,22 +34,27 @@ export async function POST() {
     return NextResponse.json({ error: "Akun kamu sudah Pro.", plan: current }, { status: 400 });
   }
 
-  // Email di-embed langsung ke order_id (base64url, tanpa padding) supaya webhook bisa
-  // aktifkan Pro tanpa perlu tabel pending-order terpisah — order_id Midtrans cuma boleh
-  // [a-zA-Z0-9-_], persis charset base64url.
-  const emailToken = Buffer.from(user.email).toString("base64url");
-  const orderId = `pro-${emailToken}-${Date.now()}`;
+  sweepExpiredOrders();
 
+  let order;
   try {
-    const { redirectUrl } = await createSnapTransaction({
-      orderId,
-      grossAmount: PRO_PRICE_IDR,
-      customer: { email: user.email, name: user.name },
-      itemName: "Kasyaf Redis Cloud - Pro Plan (1 bulan)",
+    // Idempotent: kalau user udah punya order pending yang belum expired, dia bakal
+    // dapet order (dan nominal) yang sama lagi — bukan bikin order/kode unik baru.
+    order = createOrGetPendingOrder(user.email, {
+      baseAmount: PRO_PRICE_IDR,
+      durationDays: 30,
+      expiryMinutes: 60,
     });
-    return NextResponse.json({ redirectUrl, orderId });
   } catch (err) {
-    console.error("Midtrans checkout error:", err.message);
-    return NextResponse.json({ error: "Gagal membuat transaksi pembayaran. Coba lagi nanti." }, { status: 502 });
+    console.error("Gagal membuat order manual payment:", err.message);
+    return NextResponse.json({ error: "Gagal membuat order pembayaran. Coba lagi nanti." }, { status: 502 });
   }
+
+  return NextResponse.json({
+    orderId: order.orderId,
+    grossAmount: order.grossAmount,
+    uniqueCode: order.uniqueCode,
+    expiresAt: order.expiresAt,
+    destination: getPaymentDestination(),
+  });
 }

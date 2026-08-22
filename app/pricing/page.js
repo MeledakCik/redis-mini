@@ -23,7 +23,7 @@ const PRO_FEATURES = [
 const FAQ = [
   {
     q: "Metode pembayaran apa saja yang didukung?",
-    a: "Pembayaran diproses lewat Midtrans — QRIS, transfer Virtual Account (BCA/BNI/BRI/Mandiri/Permata), kartu kredit/debit, dan e-wallet (GoPay, ShopeePay, dll).",
+    a: "Transfer bank langsung atau scan QRIS ke rekening kami — nominal punya kode unik biar otomatis terdeteksi begitu masuk, Pro aktif otomatis tanpa perlu konfirmasi manual.",
   },
   {
     q: "Apa yang terjadi kalau storage/database limit Free tercapai?",

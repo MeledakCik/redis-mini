@@ -75,8 +75,8 @@ export async function POST(req, { params }) {
             { status: 400 }
           );
         }
-        // Task 3: storage limit 500MB/akun — UPSERT nambah data baru, jadi dicek dulu.
-        const storage = await assertStorageAvailable(inst.userId, user?.email);
+        // FREE MODE: storage limit 500MB/akun — UPSERT nambah data baru, jadi dicek dulu.
+        const storage = await assertStorageAvailable(inst.userId);
         if (!storage.allowed) {
           return NextResponse.json(storage.response, { status: 403 });
         }

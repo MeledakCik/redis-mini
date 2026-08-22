@@ -27,9 +27,7 @@ export function CreateDatabaseDialog({ open, onClose, onCreated }) {
       const data = await res.json();
       if (!res.ok) {
         if (res.status === 403 && data.error === "LIMIT_REACHED") {
-          onClose();
-          router.push(data.upgradeUrl || "/billing");
-          return;
+          throw new Error(data.message || "Free tier limit reached.");
         }
         throw new Error(data.error || "Gagal membuat database");
       }
