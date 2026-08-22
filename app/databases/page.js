@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreateDatabaseDialog } from "@/components/create-database-dialog";
+import { DatabaseTemplates } from "@/components/database-templates";
 import { formatBytes, timeAgo } from "@/lib/utils";
 import { cardReveal, staggerContainer } from "@/lib/motion";
 
@@ -87,15 +88,33 @@ export default function DatabasesPage() {
             </div>
           )}
 
+          {/* REVAMP: empty state sekarang "welcoming", bukan cuma ikon + 1 baris teks. */}
           {!loading && instances.length === 0 && !error && (
-            <Card className="py-20 text-center border-dashed">
-              {/* ANIMASI KASYAF: empty state floating loop */}
-              <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
-                <Database className="mx-auto text-zinc-700 mb-3" size={32} />
-              </motion.div>
-              <p className="text-zinc-400 font-medium text-sm">Belum ada database</p>
-              <p className="text-zinc-600 text-xs mt-1">Klik "Create Database" untuk provisioning Redis database pertama kamu.</p>
-            </Card>
+            <div className="space-y-8 mb-8">
+              <Card className="py-14 px-4 text-center border-dashed">
+                <motion.div
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  className="mx-auto mb-4 w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center"
+                >
+                  <Database className="text-accent" size={26} />
+                </motion.div>
+                <p className="text-zinc-100 font-semibold text-lg">Welcome to Kasyaf Redis Cloud! 👋</p>
+                <p className="text-zinc-500 text-sm mt-2 max-w-md mx-auto">
+                  Cluster kamu Online di SIN. Provisioning database pertama kamu gratis 100MB, siap dalam 2 detik.
+                </p>
+                <Button onClick={handleCreateClick} className="mt-6" size="lg">
+                  <Plus size={16} /> Create Database
+                </Button>
+              </Card>
+
+              <div>
+                <p className="text-center text-xs font-medium text-zinc-600 uppercase tracking-wider mb-4">
+                  Atau mulai dari template
+                </p>
+                <DatabaseTemplates onUseTemplate={handleCreateClick} />
+              </div>
+            </div>
           )}
 
           {/* ANIMASI KASYAF: card reveal + stagger tiap list item muncul */}
