@@ -4,16 +4,43 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Database, Boxes, KeyRound, LogOut, Menu, X } from "lucide-react";
+import {
+  LayoutDashboard,
+  Database,
+  Boxes,
+  HardDrive,
+  BarChart3,
+  KeyRound,
+  CreditCard,
+  Settings as SettingsIcon,
+  BookOpen,
+  LogOut,
+  Menu,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
-// Billing dicabut total (FREE mode selamanya) — item menu "Billing" sengaja gak ada lagi.
-// TODO: re-add custom QRIS gateway later, baru tambahin lagi menu Billing di sini.
+// REVAMP: sidebar production-grade — nyambungin semua halaman yang udah ada
+// (overview, backups, monitoring, billing custom-gateway) yang sebelumnya gak
+// punya entry menu. Billing sekarang balik lagi karena custom payment gateway
+// (Moota, bukan Midtrans) udah jalan di /billing — lihat app/billing/page.js.
 const menu = [
+  { label: "Overview", icon: LayoutDashboard, href: "/overview" },
   { label: "Databases", icon: Database, href: "/databases" },
-  { label: "Vector", icon: Boxes, href: "/vector" },
+  { label: "Vector", icon: Boxes, href: "/vector", badge: "Beta" },
+  { label: "Backups", icon: HardDrive, href: "/backups" },
+  { label: "Metrics & Logs", icon: BarChart3, href: "/monitoring" },
   { label: "API Keys", icon: KeyRound, href: "/connect" },
+  { label: "Billing", icon: CreditCard, href: "/billing" },
+  { label: "Settings", icon: SettingsIcon, href: "/settings" },
+  {
+    label: "Docs",
+    icon: BookOpen,
+    href: "https://github.com/MeledakCik/redis-mini/blob/main/docs/CLOUDFLARE_SETUP.md",
+    external: true,
+  },
 ];
 
 function SidebarContent({ pathname, session, onNavigate }) {
@@ -30,12 +57,15 @@ function SidebarContent({ pathname, session, onNavigate }) {
       <nav className="flex-1 py-3 px-2 space-y-0.5">
         {menu.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname?.startsWith(item.href);
+          const isActive = !item.external && pathname?.startsWith(item.href);
+          const linkProps = item.external
+            ? { href: item.href, target: "_blank", rel: "noopener noreferrer" }
+            : { href: item.href, onClick: onNavigate };
+          const Comp = item.external ? "a" : Link;
           return (
-            <Link
+            <Comp
               key={item.label}
-              href={item.href}
-              onClick={onNavigate}
+              {...linkProps}
               className={cn(
                 "relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors",
                 isActive
@@ -51,9 +81,14 @@ function SidebarContent({ pathname, session, onNavigate }) {
                   className="absolute inset-0 bg-accent/10 rounded-lg"
                 />
               )}
-              <Icon size={15} className="relative" />
-              <span className="relative">{item.label}</span>
-            </Link>
+              <Icon size={15} className="relative shrink-0" />
+              <span className="relative truncate">{item.label}</span>
+              {item.badge && (
+                <Badge variant="yellow" className="relative ml-auto shrink-0">
+                  {item.badge}
+                </Badge>
+              )}
+            </Comp>
           );
         })}
       </nav>
