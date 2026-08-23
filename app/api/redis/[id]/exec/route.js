@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getInstance, getInstanceForUser } from "@/lib/store";
 import { getRedisClient, isCommandAllowed } from "@/lib/redis-pool";
 import { requireUser } from "@/lib/auth-guard";
-import { assertStorageAvailable } from "@/lib/quota";
+import { assertStorageAvailable } from "@/lib/free-tier";
 
 // Command yang nulis data baru (butuh storage) — dicek terhadap kuota 500MB/akun sebelum
 // dieksekusi. Command baca/hapus/admin (GET, DEL, KEYS, dst) selalu boleh biar user yang
@@ -74,7 +74,8 @@ export async function POST(req, { params }) {
     return NextResponse.json({ error: `Command "${command.toUpperCase()}" tidak diizinkan` }, { status: 403 });
   }
 
-  // FREE MODE: storage limit 500MB/akun — cuma dicek untuk command yang nambah data baru.
+  // Storage limit 500MB/akun, flat buat semua orang (lihat lib/free-tier.js) — cuma
+  // dicek untuk command yang nambah data baru.
   if (WRITE_COMMANDS.has(command.toUpperCase())) {
     const storage = await assertStorageAvailable(inst.userId);
     if (!storage.allowed) {

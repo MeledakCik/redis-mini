@@ -1,10 +1,13 @@
 import Link from "next/link";
-import { Check, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { Navbar } from "@/components/marketing/navbar";
 import { Footer } from "@/components/marketing/footer";
 import { Card } from "@/components/ui/card";
 
+// Billing dicabut total — app ini sekarang FREE mode selamanya, satu tier doang.
+// TODO: re-add custom QRIS gateway later kalau mau jual Pro plan lagi (dulu ada FREE_FEATURES
+// + PRO_FEATURES 2 kartu berdampingan, lihat git history sebelum komit ini kalau perlu referensi).
 const FREE_FEATURES = [
   "1 Redis database",
   "1 Vector database (Qdrant)",
@@ -12,30 +15,15 @@ const FREE_FEATURES = [
   "REST API + CLI browser",
   "Community support",
 ];
-const PRO_FEATURES = [
-  "20 Redis databases",
-  "20 Vector databases (Qdrant)",
-  "10GB total storage / akun",
-  "REST API + CLI browser",
-  "Priority support",
-];
 
 const FAQ = [
   {
-    q: "Metode pembayaran apa saja yang didukung?",
-    a: "Transfer bank langsung atau scan QRIS ke rekening kami — nominal punya kode unik biar otomatis terdeteksi begitu masuk, Pro aktif otomatis tanpa perlu konfirmasi manual.",
+    q: "Apa yang terjadi kalau storage/database limit tercapai?",
+    a: "Data yang sudah ada tetap aman dan bisa dibaca/dihapus, tapi kamu gak bisa nulis data baru atau bikin database baru sampai bersihin data lama.",
   },
   {
-    q: "Apa yang terjadi kalau storage/database limit Free tercapai?",
-    a: "Data yang sudah ada tetap aman dan bisa dibaca/dihapus, tapi kamu gak bisa nulis data baru atau bikin database baru sampai upgrade ke Pro atau bersihin data lama.",
-  },
-  {
-    q: "Bisa downgrade kapan aja?",
-    a: "Pro plan aktif per 30 hari sejak pembayaran berhasil. Kalau gak diperpanjang, akun otomatis balik ke Free plan setelah masa aktif habis — database yang melebihi limit Free tetap tersimpan, cuma gak bisa nambah data/database baru sampai di bawah limit lagi.",
-  },
-  {
-    q: "Apakah ada trial Pro?",
-    a: "Belum ada trial otomatis saat ini. Free plan dirancang cukup buat development & evaluasi sebelum upgrade.",
+    q: "Ada rencana paid plan?",
+    a: "Belum tersedia saat ini. Semua akun jalan di free tier yang sama.",
   },
 ];
 
@@ -54,11 +42,11 @@ export default async function PricingPage() {
           <div className="text-center mb-14">
             <h1 className="text-3xl md:text-5xl font-display font-bold tracking-tight text-white">Pricing yang simpel</h1>
             <p className="mt-4 text-sm md:text-base text-zinc-400 max-w-lg mx-auto">
-              Mulai gratis, upgrade begitu butuh lebih banyak database atau storage. Tanpa kontrak, batalkan kapan aja.
+              Gratis sepenuhnya. Cukup buat development, evaluasi, sampai proyek kecil.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
+          <div className="max-w-sm mx-auto">
             <Card className="p-7">
               <h2 className="text-base font-semibold text-zinc-100">Free</h2>
               <p className="text-3xl font-bold text-zinc-100 mt-3">
@@ -67,7 +55,7 @@ export default async function PricingPage() {
               <ul className="mt-6 space-y-3 text-sm">
                 {FREE_FEATURES.map((f) => (
                   <li key={f} className="flex items-center gap-2 text-zinc-400">
-                    <Check size={14} className="text-zinc-600 shrink-0" /> {f}
+                    <Check size={14} className="text-accent shrink-0" /> {f}
                   </li>
                 ))}
               </ul>
@@ -76,30 +64,6 @@ export default async function PricingPage() {
                 className="mt-7 block text-center h-10 leading-10 rounded-lg border border-border text-sm text-zinc-200 hover:bg-white/5 transition-colors"
               >
                 {isLoggedIn ? "Go to Dashboard" : "Get Started Free"}
-              </Link>
-            </Card>
-
-            <Card className="p-7 border-accent/40 relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-accent text-black text-[10px] font-bold px-2.5 py-1 rounded-bl-lg">
-                RECOMMENDED
-              </div>
-              <h2 className="text-base font-semibold text-zinc-100">Pro</h2>
-              <p className="text-3xl font-bold text-zinc-100 mt-3">
-                Rp149rb<span className="text-sm font-normal text-zinc-500">/bulan</span>
-              </p>
-              <ul className="mt-6 space-y-3 text-sm">
-                {PRO_FEATURES.map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-zinc-300">
-                    <Check size={14} className="text-accent shrink-0" /> {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={isLoggedIn ? "/billing" : "/register"}
-                className="mt-7 flex items-center justify-center gap-1.5 h-10 rounded-lg bg-accent text-black text-sm font-semibold hover:bg-accent-dark transition-colors"
-              >
-                <Sparkles size={14} />
-                {isLoggedIn ? "Upgrade to Pro" : "Daftar dulu untuk Upgrade"}
               </Link>
             </Card>
           </div>

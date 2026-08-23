@@ -4,7 +4,7 @@ import { parseVectorCommand } from "@/lib/vector-command";
 import { upsertPoints, searchPoints, deletePoints, retrievePoints, scrollPoints } from "@/lib/qdrant";
 import { recordOp, recordBytesOut } from "@/lib/vector-metrics";
 import { requireUser } from "@/lib/auth-guard";
-import { assertStorageAvailable } from "@/lib/quota";
+import { assertStorageAvailable } from "@/lib/free-tier";
 
 // Sama seperti app/api/redis/[id]/exec/route.js: endpoint ini juga punya 2 mode akses.
 //  a) Browser (Data Browser/CLI kita sendiri): session login lewat requireUser() +
@@ -75,7 +75,7 @@ export async function POST(req, { params }) {
             { status: 400 }
           );
         }
-        // FREE MODE: storage limit 500MB/akun — UPSERT nambah data baru, jadi dicek dulu.
+        // Task 3: storage limit 500MB/akun — UPSERT nambah data baru, jadi dicek dulu.
         const storage = await assertStorageAvailable(inst.userId);
         if (!storage.allowed) {
           return NextResponse.json(storage.response, { status: 403 });

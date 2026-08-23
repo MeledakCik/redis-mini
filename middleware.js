@@ -4,15 +4,17 @@ import { checkRateLimit } from "@/lib/rate-limit";
 const PROTECTED_PAGES = ["/databases", "/vector", "/connect"];
 const PUBLIC_PAGES = ["/login", "/register", "/unauthorized"];
 
-// Origin VPS ini TIDAK boleh diakses langsung by IP — cuma lewat Cloudflare
-// (nginx sudah percaya CF-Connecting-IP lewat set_real_ip_from, lihat nginx.conf).
-// Kalau request datang dengan Host header = IP mentah ini, berarti DNS/Cloudflare
-// di-skip (client hit origin langsung) -> tolak. Lihat docs/CLOUDFLARE_SETUP.md.
-const ORIGIN_IP = "103.92.215.180";
+// Origin VPS (103.92.215.180) yang diakses LANGSUNG pakai IP (bukan lewat domain
+// console.kasyaf.id/Cloudflare) di-block di sini — defense-in-depth di ATAS firewall level
+// (ufw, lihat scripts/setup-cloudflare-ufw.sh) yang jadi proteksi UTAMA. Kalau request
+// nyampe ke sini dengan Host header berisi IP itu, artinya ufw belum/gagal nge-block, jadi
+// app-layer tetep nolak. $host di nginx tetap "103.92.215.180" untuk request kayak gini
+// (bukan di-rewrite), jadi cek dari header "host" bawaan request valid.
+const BLOCKED_DIRECT_IP = "103.92.215.180";
 
 function getIp(req) {
   return (
-    req.headers.get("cf-connecting-ip")?.trim() ||
+    req.headers.get("cf-connecting-ip") || // IP visitor asli dari Cloudflare, prioritas utama
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     req.headers.get("x-real-ip") ||
     "unknown"
@@ -22,10 +24,11 @@ function getIp(req) {
 export function middleware(req) {
   const { pathname } = req.nextUrl;
 
-  // --- ANTI-DDOS / ORIGIN LOCK: tolak akses langsung ke IP origin, cuma lewat Cloudflare ---
+  // Anti-DDoS Task 2: tolak akses yang nembak IP origin langsung (skip Cloudflare
+  // sepenuhnya). Host header berisi IP VPS -> jelas bukan lewat console.kasyaf.id.
   const host = req.headers.get("host") || "";
-  if (host.includes(ORIGIN_IP)) {
-    return NextResponse.json({ error: "Direct origin access is not allowed." }, { status: 403 });
+  if (host.includes(BLOCKED_DIRECT_IP)) {
+    return NextResponse.json({ error: "Direct IP access is not allowed" }, { status: 403 });
   }
 
   const token =
@@ -134,5 +137,10 @@ export function middleware(req) {
 }
 
 export const config = {
-  matcher: ["/", "/databases/:path*", "/vector/:path*", "/api/:path*", "/login", "/register", "/unauthorized", "/connect/:path*"],
+  // Diperluas dari sebelumnya (cuma /databases, /vector, /api, /login, /register,
+  // /unauthorized) supaya blokir direct-IP-access & security headers berlaku di SEMUA
+  // halaman termasuk marketing (/, /pricing) — bukan cuma app routes. Static asset
+  // Next.js (_next/static, _next/image) dan favicon dikecualikan biar gak nambah
+  // overhead ke tiap file JS/CSS/gambar.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

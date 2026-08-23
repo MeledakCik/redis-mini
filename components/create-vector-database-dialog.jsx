@@ -30,11 +30,9 @@ export function CreateVectorDatabaseDialog({ open, onClose, onCreated }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        // FREE MODE: 403 LIMIT_REACHED -> tampilkan pesan error, gak ada /billing lagi.
-        if (res.status === 403 && data.error === "LIMIT_REACHED") {
-          throw new Error(data.message || "Free tier limit reached.");
-        }
-        throw new Error(data.error || "Gagal membuat vector database");
+        // Billing dicabut total (FREE mode) — dulu redirect ke /billing, sekarang cukup
+        // tampilin pesan limit-nya inline. TODO: re-add custom QRIS gateway later.
+        throw new Error(data.error === "LIMIT_REACHED" ? data.message : data.error || "Gagal membuat vector database");
       }
       onCreated(data.instance);
       onClose();

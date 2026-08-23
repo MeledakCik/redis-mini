@@ -9,11 +9,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreateDatabaseDialog } from "@/components/create-database-dialog";
-import { DatabaseTemplates } from "@/components/database-templates";
 import { formatBytes, timeAgo } from "@/lib/utils";
 import { cardReveal, staggerContainer } from "@/lib/motion";
 
-// FREE MODE: satu-satunya plan yang ada, 1 Redis database per akun (lihat lib/quota.js).
+// Billing dicabut total — app ini sekarang FREE mode selamanya, limit hardcoded di
+// frontend (dan tetap ditegakkan di server oleh lib/free-tier.js, ini cuma buat UI).
+// TODO: re-add custom QRIS gateway later kalau mau jual Pro plan lagi.
 const FREE_TIER_LIMIT = 1;
 
 export default function DatabasesPage() {
@@ -42,13 +43,13 @@ export default function DatabasesPage() {
     return () => clearInterval(t1);
   }, []);
 
-  // Akun lama yang udah punya >1 database sebelum limit diterapkan gak dihapus,
+  // User lama yang udah punya >1 database dari sebelum limit diterapkan gak dihapus,
   // tapi gak boleh bikin baru lagi sampai delete.
   const redisLimitReached = instances.length >= FREE_TIER_LIMIT;
   const hasLegacyOverflow = instances.length > FREE_TIER_LIMIT;
 
   function handleCreateClick() {
-    if (redisLimitReached) return;
+    if (redisLimitReached) return; // tombol sudah disabled, ini cuma jaga-jaga
     setDialogOpen(true);
   }
 
@@ -68,6 +69,7 @@ export default function DatabasesPage() {
             <Button
               onClick={handleCreateClick}
               variant={redisLimitReached ? "subtle" : "default"}
+              disabled={redisLimitReached}
               className="w-full sm:w-auto"
             >
               {redisLimitReached ? <Lock size={15} /> : <Plus size={15} />}
@@ -75,10 +77,16 @@ export default function DatabasesPage() {
             </Button>
           </div>
 
+          {redisLimitReached && !hasLegacyOverflow && (
+            <div className="mb-5 bg-amber-950/30 border border-amber-900/50 text-amber-200 text-xs rounded-lg px-4 py-3">
+              Free tier: {FREE_TIER_LIMIT} Redis database per akun. Hapus database yang ada untuk bikin yang baru.
+            </div>
+          )}
+
           {hasLegacyOverflow && (
             <div className="mb-5 bg-blue-950/30 border border-blue-900/50 text-blue-200 text-xs rounded-lg px-4 py-3">
-              You have {instances.length} databases from before the free tier limit — you can keep them, but can't
-              create a new one until you delete one.
+              You have {instances.length} databases from before the limit was applied — you can keep them, but
+              can't create a new one until you delete down to {FREE_TIER_LIMIT}.
             </div>
           )}
 
@@ -88,33 +96,15 @@ export default function DatabasesPage() {
             </div>
           )}
 
-          {/* REVAMP: empty state sekarang "welcoming", bukan cuma ikon + 1 baris teks. */}
           {!loading && instances.length === 0 && !error && (
-            <div className="space-y-8 mb-8">
-              <Card className="py-14 px-4 text-center border-dashed">
-                <motion.div
-                  animate={{ y: [0, -6, 0] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                  className="mx-auto mb-4 w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center"
-                >
-                  <Database className="text-accent" size={26} />
-                </motion.div>
-                <p className="text-zinc-100 font-semibold text-lg">Welcome to Kasyaf Redis Cloud! 👋</p>
-                <p className="text-zinc-500 text-sm mt-2 max-w-md mx-auto">
-                  Cluster kamu Online di SIN. Provisioning database pertama kamu gratis 100MB, siap dalam 2 detik.
-                </p>
-                <Button onClick={handleCreateClick} className="mt-6" size="lg">
-                  <Plus size={16} /> Create Database
-                </Button>
-              </Card>
-
-              <div>
-                <p className="text-center text-xs font-medium text-zinc-600 uppercase tracking-wider mb-4">
-                  Atau mulai dari template
-                </p>
-                <DatabaseTemplates onUseTemplate={handleCreateClick} />
-              </div>
-            </div>
+            <Card className="py-20 text-center border-dashed">
+              {/* ANIMASI KASYAF: empty state floating loop */}
+              <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
+                <Database className="mx-auto text-zinc-700 mb-3" size={32} />
+              </motion.div>
+              <p className="text-zinc-400 font-medium text-sm">Belum ada database</p>
+              <p className="text-zinc-600 text-xs mt-1">Klik "Create Database" untuk provisioning Redis database pertama kamu.</p>
+            </Card>
           )}
 
           {/* ANIMASI KASYAF: card reveal + stagger tiap list item muncul */}
@@ -165,7 +155,7 @@ export default function DatabasesPage() {
       <CreateDatabaseDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        onCreated={load}
+        onCreated={() => load()}
       />
     </div>
   );

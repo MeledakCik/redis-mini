@@ -6,7 +6,7 @@ import { resolvePublicQdrantEndpoint } from "@/lib/qdrant-public-host";
 import { generateId, generatePassword } from "@/lib/generate";
 import { requireUser, authErrorResponse } from "@/lib/auth-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { canCreateInstance, limitResponse } from "@/lib/quota";
+import { canCreateInstance, limitResponse } from "@/lib/free-tier";
 
 const ALLOWED_DIMENSIONS = [384, 768, 1536];
 const ALLOWED_METRICS = ["cosine", "dot", "euclidean"];
@@ -53,7 +53,7 @@ export async function POST(req) {
     return authErrorResponse(err);
   }
 
-  // FREE MODE: 1 Vector database per akun (lihat lib/quota.js — FREE_TIER_LIMIT).
+  // Task 3: free tier = 1 Vector database per akun, hardcoded (lihat lib/free-tier.js).
   const quota = canCreateInstance(user.id, "vector");
   if (!quota.allowed) {
     return NextResponse.json(limitResponse(quota.reason, { count: quota.count }), { status: 403 });

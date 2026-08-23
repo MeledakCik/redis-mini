@@ -12,8 +12,10 @@ import { CreateVectorDatabaseDialog } from "@/components/create-vector-database-
 import { timeAgo } from "@/lib/utils";
 import { cardReveal, staggerContainer } from "@/lib/motion";
 
-// FREE MODE: satu-satunya plan yang ada, 1 Vector database per akun (lihat lib/quota.js).
-const FREE_TIER_LIMIT = 1;
+// Billing dicabut total — app ini sekarang FREE mode selamanya, limit hardcoded di
+// frontend (dan tetap ditegakkan di server oleh lib/free-tier.js, ini cuma buat UI).
+// TODO: re-add custom QRIS gateway later kalau mau jual Pro plan lagi.
+const MAX_VECTOR_PER_USER = 1;
 
 export default function VectorPage() {
   const [instances, setInstances] = useState([]);
@@ -41,11 +43,11 @@ export default function VectorPage() {
     return () => clearInterval(t1);
   }, []);
 
-  const vectorLimitReached = instances.length >= FREE_TIER_LIMIT;
-  const hasLegacyOverflow = instances.length > FREE_TIER_LIMIT;
+  const vectorLimitReached = instances.length >= MAX_VECTOR_PER_USER;
+  const hasLegacyOverflow = instances.length > MAX_VECTOR_PER_USER;
 
   function handleCreateClick() {
-    if (vectorLimitReached) return;
+    if (vectorLimitReached) return; // tombol sudah disabled, ini cuma jaga-jaga
     setDialogOpen(true);
   }
 
@@ -64,17 +66,24 @@ export default function VectorPage() {
             <Button
               onClick={handleCreateClick}
               variant={vectorLimitReached ? "subtle" : "default"}
+              disabled={vectorLimitReached}
               className="w-full sm:w-auto"
             >
               {vectorLimitReached ? <Lock size={15} /> : <Plus size={15} />}
-              {vectorLimitReached ? `Limit Reached (${instances.length}/${FREE_TIER_LIMIT})` : "Create Vector Database"}
+              {vectorLimitReached ? `Limit Reached (${instances.length}/${MAX_VECTOR_PER_USER})` : "Create Vector Database"}
             </Button>
           </div>
 
+          {vectorLimitReached && !hasLegacyOverflow && (
+            <div className="mb-5 bg-amber-950/30 border border-amber-900/50 text-amber-200 text-xs rounded-lg px-4 py-3">
+              Free tier: {MAX_VECTOR_PER_USER} Vector database per akun. Hapus database yang ada untuk bikin yang baru.
+            </div>
+          )}
+
           {hasLegacyOverflow && (
             <div className="mb-5 bg-blue-950/30 border border-blue-900/50 text-blue-200 text-xs rounded-lg px-4 py-3">
-              You have {instances.length} databases from before the free tier limit — you can keep them, but can't
-              create a new one until you delete one.
+              You have {instances.length} databases from before the limit was applied — you can keep them, but
+              can't create a new one until you delete down to {MAX_VECTOR_PER_USER}.
             </div>
           )}
 
@@ -139,7 +148,11 @@ export default function VectorPage() {
         </main>
       </div>
 
-      <CreateVectorDatabaseDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onCreated={load} />
+      <CreateVectorDatabaseDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onCreated={() => load()}
+      />
     </div>
   );
 }

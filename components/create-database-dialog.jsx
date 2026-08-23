@@ -26,10 +26,9 @@ export function CreateDatabaseDialog({ open, onClose, onCreated }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        if (res.status === 403 && data.error === "LIMIT_REACHED") {
-          throw new Error(data.message || "Free tier limit reached.");
-        }
-        throw new Error(data.error || "Gagal membuat database");
+        // Billing dicabut total (FREE mode) — dulu redirect ke /billing, sekarang cukup
+        // tampilin pesan limit-nya inline. TODO: re-add custom QRIS gateway later.
+        throw new Error(data.error === "LIMIT_REACHED" ? data.message : data.error || "Gagal membuat database");
       }
       onCreated(data.instance);
       onClose();

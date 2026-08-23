@@ -4,7 +4,7 @@ import { getProviderForInstance, DEPLOYMENT_MODE, REGION_LABEL, AclProvider } fr
 import { generateId } from "@/lib/generate";
 import { requireUser, authErrorResponse } from "@/lib/auth-guard";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { canCreateInstance, limitResponse } from "@/lib/quota";
+import { canCreateInstance, limitResponse } from "@/lib/free-tier";
 
 // Redis-as-a-Service provider: SATU cluster Redis utama (REDIS_URL) di-share oleh semua
 // customer. Setiap database yang dibuat dari dashboard mendapat akun Redis ACL sendiri
@@ -50,7 +50,8 @@ export async function POST(req) {
     return authErrorResponse(err);
   }
 
-  // FREE MODE: 1 Redis database per akun (lihat lib/quota.js — FREE_TIER_LIMIT).
+  // Free tier: 1 Redis database per akun, hardcoded (lihat lib/free-tier.js).
+  // TODO: re-add custom QRIS gateway later kalau mau jual Pro plan lagi.
   const quota = canCreateInstance(user.id, "redis");
   if (!quota.allowed) {
     return NextResponse.json(limitResponse(quota.reason, { count: quota.count }), { status: 403 });
