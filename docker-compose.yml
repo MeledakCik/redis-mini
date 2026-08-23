@@ -13,7 +13,8 @@ services:
     # Cloudflare standar cuma proxy HTTP(S), raw TCP 6379 akan timeout kalau hostname-nya
     # orange cloud (persis kasus yang bikin Railway app gagal connect sebelum fix ini).
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
+      - "16379:6379"
     networks:
       - kasyaf-net
     restart: unless-stopped
