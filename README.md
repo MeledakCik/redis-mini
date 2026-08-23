@@ -1,251 +1,309 @@
-# Kasyaf Redis Cloud
+# ⚡ Kasyaf Cloud — Serverless Data Platform for Developers
 
-### by Cikawan — https://console.kasyaf.id
+> **Redis & Vector DB tanpa ribet setup. REST API 100% kompatibel dengan Upstash SDK — provisioning dalam hitungan detik.**
+
+<p align="center">
+  <a href="https://console.kasyaf.id"><img src="https://img.shields.io/badge/Live-console.kasyaf.id-00e095?style=for-the-badge&logo=vercel" /></a>
+  <a href="https://db.kasyaf.id:16379"><img src="https://img.shields.io/badge/Redis-db.kasyaf.id:16379-DC382D?style=for-the-badge&logo=redis&logoColor=white" /></a>
+  <img src="https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js" />
+  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+</p>
+
+<p align="center">
+  <b>by Cikawan</b> • <a href="https://console.kasyaf.id">console.kasyaf.id</a> • <a href="https://kasyaf.id">kasyaf.id</a>
+</p>
+
+---
 
 ![Kasyaf Redis Cloud](/public/logo.png)
 
-Lightweight console untuk Redis & Vector DB (Qdrant), clone ala console.upstash.com. Dark theme, accent hijau #00e095, font JetBrains Mono.
+### 🎯 Apa itu Kasyaf Cloud?
 
-Project ini 1 codebase jalan di 2 mode: Local (Docker Desktop) dan VPS Ubuntu (Docker). Data persistent pakai Docker Volume external.
+Clone dari `console.upstash.com` tapi lightweight, self-hosted, 1 codebase jalan di 2 mode:
 
-## Architecture Production (VPS)
+- **Local Mode** → `Docker Desktop` / `npm run dev`
+- **VPS Mode** → Ubuntu Sumopod `103.92.215.180` + Docker Compose + Nginx
 
-Client -> :443 -> nginx (alpine) -> console:3000 (Next.js standalone)
-                        |-> redis:6379 (redis:7-alpine)
-                        |-> qdrant:6333 (qdrant:v1.9.0)
+Semua data persistent pakai **Docker External Volume** (`redis_data`, `qdrant_data`, `console_data`).
 
-Services di docker-compose.yml:
+### ✨ Features
 
-- **nginx** - Reverse proxy + SSL terminator, map 80/443 ke console:3000
-- **console** - Next.js 14 app (output standalone), port 3000 internal only
-- **redis** - redis:7-alpine, auth pakai REDIS_PASSWORD
-- **qdrant** - qdrant/qdrant:v1.9.0, storage di volume qdrant_data
+- 🔥 **Redis Cloud** - `redis:7-alpine` + ACL per-tenant `user_{id}:bull:*` + BullMQ ready (`+info +eval +evalsha`)
+- 🧠 **Vector Cloud** - `qdrant/qdrant:v1.9.0` REST API
+- 🔌 **Upstash Compatible REST API** - `POST /api/redis/<id>/exec` & `/api/vector/<id>/exec` pakai Bearer token
+- 🎨 **Console UI** - Dark theme, accent `#00e095`, font JetBrains Mono, mirip Upstash Console
+- ⚙️ **BullMQ & Queue** - Support forensic worker, screenshot, multi-channel dispatcher (Resend + Gmail)
+- 🔐 **NextAuth v5** - Google, GitHub, Credentials fallback (JWT) + whitelist default-deny
 
-Semua data pakai external volume: redis_data, qdrant_data, console_data
+---
 
-## Tech Stack
+### 🏗️ Architecture Production
 
-- Next.js 14 (App Router, JavaScript, output: standalone)
-- Tailwind CSS + shadcn/ui hand-rolled
-- NextAuth v5 (Google, GitHub, Credentials fallback — JWT session)
-- ioredis - koneksi Redis
-- Qdrant REST API - vector search
-- Nginx Alpine - reverse proxy
-- Docker + Docker Compose
+```mermaid
+graph TD
+    User[👨‍💻 Developer Browser] -->|https://console.kasyaf.id :443<br/>ORANGE Proxied - Anti DDoS| CF[Cloudflare Edge]
+    CF --> Nginx
 
-## Local Development
+    App[🚂 Railway / BullMQ Worker] -->|redis://db.kasyaf.id:16379<br/>GRAY DNS Only - Direct TCP| Nginx2[Host:16379]
+
+    subgraph VPS - Sumopod 103.92.215.180
+        Nginx[nginx:alpine<br/>:80/:443 - SSL Terminator]
+        Console[console:3000<br/>Next.js 14 Standalone]
+        Redis[redis:6379<br/>redis:7-alpine]
+        Qdrant[qdrant:6333<br/>qdrant:v1.9.0]
+        Nginx --> Console
+        Console --> Redis
+        Console --> Qdrant
+    end
+
+    Nginx2 --> Redis
+
+    style CF fill:#f38020,color:#fff
+    style Nginx fill:#00e095,stroke:#000,color:#000
+    style Redis fill:#DC382D,color:#fff
+```
+
+**Services di `docker-compose.yml`:**
+
+| Service | Image | Port Internal | Public | Fungsi |
+| :--- | :--- | :--- | :--- | :--- |
+| `nginx` | `nginx:alpine` | 80, 443 | 443 | Reverse Proxy + SSL Terminator |
+| `console` | `next:standalone` | 3000 | via nginx | Next.js 14 App Router |
+| `redis` | `redis:7-alpine` | 6379 | `db.kasyaf.id:16379` | Main Datastore + BullMQ |
+| `qdrant` | `qdrant/qdrant:v1.9.0` | 6333 | `vector.kasyaf.id` | Vector Search |
+
+### 🌐 DNS Setup - INI KUNCI BIAR GAK KE-BLOCK
+
+> Cloudflare Free cuma proxy port 80/443. Kalo Redis di-orange-in bakal `ETIMEDOUT`.
+
+| Name | Type | Content | Proxy Status | Wajib |
+| :--- | :--- | :--- | :--- | :--- |
+| `console.kasyaf.id` | A | `103.92.215.180` | ☁️ **Proxied** | Web Console - Aman DDoS |
+| `db.kasyaf.id` | A | `103.92.215.180` | **DNS only** | Redis TCP 16379 - Biar direct |
+| `vector.kasyaf.id` | A | `103.92.215.180` | ☁️ **Proxied** | Vector API |
+| `kasyaf.id` | A | `76.76.21.21` | DNS only | Landing Vercel |
+
+---
+
+### 🚀 Quick Start - Local
 
 ```bash
-npm install
+git clone https://github.com/MeledakCik/redis-mini.git
+cd redis-mini
 cp .env.example .env
 # isi: REDIS_PASSWORD, API_KEY_KASYAF, NEXTAUTH_SECRET, GOOGLE_CLIENT_ID/SECRET, GITHUB_ID/SECRET
 
+# Option 1: Bare metal
+npm install
 npm run dev
-# buka http://localhost:3000
-```
+# -> http://localhost:3000
 
-Atau pakai docker:
-
-```bash
+# Option 2: Docker (Recommended)
 docker compose up -d --build
 docker compose ps
+docker compose logs -f console
 ```
 
-## VPS Deployment
+### 📦 Deploy ke VPS
 
 ```bash
+# SSH ke VPS Sumopod
+ssh kaskaf@103.92.215.180
+
 git clone https://github.com/MeledakCik/redis-mini.git ~/redis-mini
 cd ~/redis-mini
 
-# .env TIDAK dari git, buat manual
+# .env TIDAK dari git, buat manual!
 nano .env
-# wajib isi: REDIS_URL, REDIS_HOST, REDIS_PASSWORD, QDRANT_URL, REDIS_PUBLIC_HOST,
-# VECTOR_PUBLIC_HOST, API_KEY_KASYAF, NEXTAUTH_URL, NEXTAUTH_SECRET, ADMIN_EMAIL,
-# GOOGLE_CLIENT_ID/SECRET, GITHUB_ID/SECRET, ALLOWED_EMAILS, ALLOWED_DOMAINS
 
 docker compose up -d --build
 docker compose logs -f console
 ```
 
-Setup Nginx SSL:
+<details>
+<summary><b>📄 .env Template (klik buka)</b></summary>
+
+```env
+# Core
+APP_ENV=vps
+NODE_ENV=production
+REDIS_URL=redis://default:PASSWORD@redis:6379
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_PASSWORD=xxx
+REDIS_PUBLIC_HOST=db.kasyaf.id:16379
+QDRANT_URL=http://qdrant:6333
+QDRANT_HOST=console.kasyaf.id
+QDRANT_PUBLIC_URL=http://console.kasyaf.id:6333
+VECTOR_PUBLIC_HOST=vector.kasyaf.id
+API_KEY_KASYAF=xxx
+
+# Auth
+NEXTAUTH_URL=https://console.kasyaf.id
+NEXTAUTH_SECRET=xxx
+ADMIN_EMAIL=admin@kasyaf.id
+GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=xxx
+GITHUB_ID=xxx
+GITHUB_SECRET=xxx
+ALLOWED_EMAILS=email1@gmail.com,email2@gmail.com
+ALLOWED_DOMAINS=kasyaf.id
+
+# BullMQ / Worker
+GMAIL_USER=
+GMAIL_CLIENT_ID=
+GMAIL_CLIENT_SECRET=
+GMAIL_REFRESH_TOKEN=
+RESEND_API_KEY=
+```
+
+</details>
+
+---
+
+### 🔧 Fix Penting - Redis ACL buat BullMQ (Yang kemarin ETIMEDOUT & NOPERM)
+
+Ini template ACL yang bener, kalo gak ada `+info +eval` bakal `NOPERM` pas `BullMQ Worker` jalan:
+
+```conf
+# Template wajib
++@all -@dangerous +info +eval +evalsha +script +client +memory +latency +lolwut
+```
+
+**Cara create user baru:**
 
 ```bash
-sudo certbot --nginx -d console.kasyaf.id -d vector.kasyaf.id
+docker exec -it redis-mini-redis-1 redis-cli --user default --pass $REDIS_PASSWORD
+
+ACL SETUSER user_userw3mk9eh0 on >zOUKAQxmU5tsGZrw1_8A on ~user_userw3mk9eh0:* +@all -@dangerous +info +eval +evalsha +script +client +memory +latency
+
+ACL LIST
 ```
 
-## Environment Variables
+**Test dari Windows:**
 
-Template ada di .env.example. Yang dipakai app adalah .env (tidak di-commit).
-
-Wajib:
-- REDIS_URL=redis://default:PASSWORD@redis:6379
-- REDIS_HOST=redis
-- REDIS_PORT=6379
-- REDIS_PASSWORD=PASSWORD
-- REDIS_PUBLIC_HOST=console.kasyaf.id:6379
-- QDRANT_URL=http://qdrant:6333
-- QDRANT_HOST=console.kasyaf.id (host publik buat connection string; port default 6333)
-- QDRANT_PUBLIC_URL=http://console.kasyaf.id:6333 (opsional, override QDRANT_HOST; sengaja http bukan https, port 6333 gak di-TLS-in nginx)
-- VECTOR_PUBLIC_HOST=vector.kasyaf.id
-- APP_ENV=vps
-- NODE_ENV=production
-- API_KEY_KASYAF=
-- NEXTAUTH_URL=https://console.kasyaf.id
-- NEXTAUTH_SECRET=
-- ADMIN_EMAIL=
-- GOOGLE_CLIENT_ID= / GOOGLE_CLIENT_SECRET=
-- GITHUB_ID= / GITHUB_SECRET=
-- ALLOWED_EMAILS= (comma separated, opsional tambahan di luar ADMIN_EMAIL)
-- ALLOWED_DOMAINS= (comma separated, misal kasyaf.id)
-
-## OAuth Setup (Google & GitHub)
-
-Console login pakai Google, GitHub, dan Email/Password (fallback, akun-akun lama).
-Login via OAuth di-gate whitelist — hanya email yang match `ADMIN_EMAIL`,
-`ALLOWED_EMAILS`, atau domain di `ALLOWED_DOMAINS` yang bisa masuk (default deny).
-
-### 1. Google Cloud Console
-
-1. Buka https://console.cloud.google.com/apis/credentials
-2. Create Credentials -> OAuth client ID -> Web application
-3. Authorized JavaScript origins: `https://console.kasyaf.id`
-4. Authorized redirect URIs:
-   ```
-   https://console.kasyaf.id/api/auth/callback/google
-   ```
-   (untuk local dev tambahkan juga `http://localhost:3000/api/auth/callback/google`)
-5. Copy Client ID & Client Secret ke `.env`:
-   ```
-   GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
-   GOOGLE_CLIENT_SECRET=xxx
-   ```
-
-### 2. GitHub OAuth App
-
-1. Buka https://github.com/settings/developers -> New OAuth App
-2. Homepage URL: `https://console.kasyaf.id`
-3. Authorization callback URL:
-   ```
-   https://console.kasyaf.id/api/auth/callback/github
-   ```
-4. Generate client secret, copy ke `.env`:
-   ```
-   GITHUB_ID=xxx
-   GITHUB_SECRET=xxx
-   ```
-
-### 3. Tambah email ke whitelist
-
-Edit `.env` di VPS, isi comma-separated (spasi setelah koma akan di-trim otomatis):
-
+```powershell
+Test-NetConnection db.kasyaf.id -Port 16379
+# TcpTestSucceeded : True = Aman!
 ```
+
+**IORedis Config biar gak ETIMEDOUT dari Railway EU:**
+
+```js
+new IORedis(process.env.REDIS_URL, {
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
+  connectTimeout: 30000,
+  keepAlive: 30000,
+  retryStrategy: (times) => Math.min(times * 100, 5000),
+  reconnectOnError: () => true
+})
+```
+
+---
+
+### 🔐 OAuth Setup
+
+Console login pakai Google, GitHub, dan Email/Password fallback. Login via OAuth di-gate whitelist.
+
+**1. Google Cloud Console**
+
+- https://console.cloud.google.com/apis/credentials
+- Create OAuth Client ID → Web Application
+- Origin: `https://console.kasyaf.id`
+- Redirect: `https://console.kasyaf.id/api/auth/callback/google`
+- (dev) tambahin `http://localhost:3000/api/auth/callback/google`
+
+**2. GitHub OAuth App**
+
+- https://github.com/settings/developers → New OAuth App
+- Homepage: `https://console.kasyaf.id`
+- Callback: `https://console.kasyaf.id/api/auth/callback/github`
+
+**3. Whitelist**
+
+```env
 ALLOWED_EMAILS=kamu@gmail.com,partner@gmail.com
 ALLOWED_DOMAINS=kasyaf.id
 ```
 
-Lalu restart container:
+Email gak ada di whitelist → auto redirect `/unauthorized` (default deny).
 
-```
-docker compose up -d --build console
-```
+**4. Register ditutup**
 
-Email yang gak ada di `ADMIN_EMAIL` / `ALLOWED_EMAILS` / domain-nya gak ada di
-`ALLOWED_DOMAINS` akan otomatis di-redirect ke `/unauthorized` walau berhasil login
-di Google/GitHub — **default deny**.
-
-> Login Email/Password (Credentials) TIDAK terpengaruh whitelist ini — itu cuma
-> berlaku buat akun yang sudah diprovision (lihat section registrasi di bawah).
-
-### 4. Registrasi publik ditutup
-
-`/register` (email+password self-serve) sudah dimatikan buat cegah bot spam akun.
-Satu-satunya cara user baru masuk adalah login via Google/GitHub + whitelist (poin 3).
-
-Kalau butuh bikin akun credentials manual (misal buat service/API-only, tanpa Google),
-login dulu ke console pakai akun `ADMIN_EMAIL`, lalu panggil endpoint ini dari sesi
-admin yang sama (contoh pakai cookie session admin):
+`/register` self-serve dimatikan anti bot. Cara bikin akun manual (harus sesi ADMIN):
 
 ```bash
 curl -X POST https://console.kasyaf.id/api/auth/register \
   -H "Content-Type: application/json" \
-  -H "Cookie: authjs.session-token=<COOKIE_SESSION_ADMIN>" \
+  -H "Cookie: authjs.session-token=<COOKIE_ADMIN>" \
   -d '{"email":"service@kasyaf.id","password":"minimal8karakter"}'
 ```
 
-Request dari siapa pun selain `ADMIN_EMAIL` akan selalu ditolak `403`.
+### 🛡️ Security Hardening
 
-### 5. REST API tetap terpisah
+- **Rate limiting** 5x gagal / 10m per email+IP → lockout 15m (2 layer di `lib/auth.js` & `middleware.js`)
+- **Registrasi publik ditutup** - cuma `ADMIN_EMAIL` bisa
+- **OAuth whitelist default-deny**
+- **Security headers** - `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `HSTS`
+- **REST API terpisah** - `/api/redis/*/exec` cuma Bearer token, gak pake cookie session
+- **UFW** - `ufw limit 16379/tcp` + fail2ban ready
+- **In-memory rate limit** - cukup buat 1 replica, kalo scale banyak instance ganti ke Redis `INCR+EXPIRE`
 
-Whitelist / OAuth sama sekali tidak menyentuh `/api/redis/*/exec` atau
-`/api/vector/*/exec` versi Bearer token. Endpoint itu tetap pakai token per-instance
-(`Authorization: Bearer <instance_password>`), independen dari session login browser:
+### 📡 REST API
 
 ```bash
+# Redis - Upstash Compatible
 curl -X POST https://console.kasyaf.id/api/redis/<instance-id>/exec \
   -H "Authorization: Bearer YOUR_INSTANCE_PASSWORD" \
   -H "Content-Type: application/json" \
   -d '{"raw":"PING"}'
+
+# BullMQ
+REDIS_URL=redis://user_userw3mk9eh0:zOUKAQxmU5tsGZrw1_8A@db.kasyaf.id:16379
+
+# Vector
+curl -X POST https://console.kasyaf.id/api/vector/<id>/exec ...
 ```
 
-## Security Hardening
-
-- **Rate limiting login (Credentials)**: max 5 percobaan gagal / 10 menit per
-  kombinasi email+IP, lalu lockout 15 menit. Ada 2 layer:
-  1. Per-email+IP di dalam `authorize()` (`lib/auth.js`)
-  2. Per-IP kasar di `middleware.js` buat endpoint `/api/auth/callback/credentials`
-     (nge-cover brute force lintas-email dari 1 sumber)
-- **Registrasi publik ditutup** — `/api/auth/register` cuma bisa dipanggil sesi
-  admin (`ADMIN_EMAIL`), plus throttle IP tambahan di middleware.
-- **OAuth whitelist default-deny** — Google/GitHub login yang emailnya gak ada di
-  `ADMIN_EMAIL` / `ALLOWED_EMAILS` / `ALLOWED_DOMAINS` di-redirect ke `/unauthorized`,
-  gak dapat sesi valid.
-- **Security headers** (di `middleware.js`): `X-Frame-Options`,
-  `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`,
-  `Strict-Transport-Security` (production only).
-- **REST API terpisah dari session** — `/api/redis/*/exec` & `/api/vector/*/exec`
-  cuma nerima `Authorization: Bearer <instance_password>`, gak pernah kebaca cookie
-  session, jadi kompromise di sisi console login gak otomatis bocorin akses API.
-
-### Known limitation
-
-Rate limiter saat ini in-memory (per-proses, `lib/rate-limit.js`). Cukup untuk
-`console` sebagai 1 replica (lihat `docker-compose.yml`). Kalau nanti di-scale ke
-banyak instance, ganti backend-nya ke Redis (`INCR` + `EXPIRE`) — signature fungsi
-bisa tetap sama.
-
-### Rekomendasi lanjutan (belum diimplementasi, opsional)
-
-- Content-Security-Policy — belum ditambahin karena butuh testing manual biar gak
-  break hydration Next.js/inline style Tailwind. Test dulu di staging:
-  `Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;`
-- CAPTCHA (hCaptcha/Cloudflare Turnstile) di form Credentials login kalau brute
-  force masih kerasa meski udah di-lock.
-
-## REST API
-
-```bash
-curl -X POST https://console.kasyaf.id/api/redis/exec \
-  -H "Authorization: Bearer YOUR_API_KEY_KASYAF" \
-  -H "Content-Type: application/json" \
-  -d '{"raw":"PING"}'
-```
-
-## Structure
+### 📁 Structure
 
 ```
 redis-mini/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── nginx/
-│   └── nginx.conf
-├── app/ (Next.js app router)
-├── components/
-├── lib/ (redis-pool, qdrant client, auth, rate-limit, etc)
-├── .env (gitignored, secrets)
-├── .env.example (template, boleh di-commit)
+│   └── conf.d/default.conf
+├── app/ (Next.js App Router)
+│   ├── api/redis/[id]/exec
+│   ├── api/vector/[id]/exec
+│   └── console/
+├── components/ (shadcn hand-rolled)
+├── lib/ (redis-pool, qdrant, auth, rate-limit)
+├── public/logo.png
+├── .env (gitignored)
+├── .env.example
 └── README.md
 ```
 
-## Note
+### 🐛 Known Issues Solved
 
-.env dan data volume tidak pernah di-push ke GitHub. Semua secrets stay di VPS. .env.example hanya template generik.
+| Error | Penyebab | Fix |
+| :--- | :--- | :--- |
+| `NOPERM ... INFO` | ACL template kurang | Tambah `+info +eval +evalsha +script` |
+| `ETIMEDOUT` Railway | CF orange block TCP 16379 | `db.kasyaf.id` jadi **DNS only** |
+| `bind() 0.0.0.0:80 failed` | Nginx host tabrakan Docker | `docker compose down` dulu, pake `certonly --standalone` |
+| `404 acme-challenge` | Webroot salah | Pake standalone + ubah CF jadi gray sementara |
+| `Gmail invalid_grant` | Refresh token expired | Generate lagi di OAuth Playground |
+| `Tidak aman` di `db.kasyaf.id` | Gray cloud, no CF SSL | Biarin, itu buat TCP bukan buat browsing. Suruh user buka `console.kasyaf.id` |
+
+### 📜 License
+
+MIT - Made with ❤️ by Cikawan
+
+---
+
+<p align="center">
+  <b>Kasyaf Cloud v1.0</b> • <code>[KASYAF_CLOUD_v1.0] • LIVE</code><br/>
+  Serverless Data Platform for Developers.
+</p>
