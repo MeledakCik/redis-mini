@@ -8,6 +8,11 @@ services:
       - "127.0.0.1:3001:3000"
     volumes:
       - ./proxies.txt:/app/proxies.txt:ro
+      - ./public/screenshots:/app/public/screenshots
+      - ./reported_urls.txt:/app/reported_urls.txt
+      - ./skipped_urls.txt:/app/skipped_urls.txt
+      - ./phishing_urls.txt:/app/phishing_urls.txt
+    shm_size: 2gb
     networks:
       - kasyaf-net
     restart: unless-stopped

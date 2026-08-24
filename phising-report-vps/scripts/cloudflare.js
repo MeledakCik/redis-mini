@@ -408,7 +408,7 @@ async function main() {
     }
 
     let { browser, page } = await connect({
-        headless: false,
+        headless: true,
         turnstile: true,
         connectOption: { defaultViewport: null },
         args: BROWSER_ARGS
@@ -433,7 +433,7 @@ async function main() {
                 if (!browser || !browser.isConnected()) {
                     console.log("[!] Reconnecting browser...");
                     const instance = await connect({
-                        headless: false,
+                        headless: true,
                         turnstile: true,
                         connectOption: { defaultViewport: null },
                         args: BROWSER_ARGS
