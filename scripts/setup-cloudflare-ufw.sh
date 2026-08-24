@@ -70,9 +70,9 @@ fi
 
 echo "== 4/5: Redis (6379) & Qdrant (6333) TETAP TERBUKA untuk publik =="
 # Ini SENGAJA, bukan celah keamanan yang kelewat — lihat header komentar di atas.
-ufw allow 6379/tcp comment "Redis-as-a-Service, proteksi via ACL password per-tenant"
+ufw allow 16379/tcp comment "Redis-as-a-Service, proteksi via ACL password per-tenant"
+ufw limit 16379/tcp
 ufw allow 6333/tcp comment "Qdrant vector DB, proteksi via token per-tenant"
-
 echo "== 5/5: Enable ufw =="
 ufw enable
 ufw status verbose
