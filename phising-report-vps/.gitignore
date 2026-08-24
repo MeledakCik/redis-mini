@@ -1,0 +1,6 @@
+node_modules
+.next
+.env
+reported_urls.txt
+skipped_urls.txt
+*.log

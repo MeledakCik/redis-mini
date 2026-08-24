@@ -1,0 +1,17 @@
+services:
+  reporter:
+    build: .
+    container_name: phishing-reporter
+    expose:
+      - "3000"
+    ports:
+      - "127.0.0.1:3001:3000"
+    volumes:
+      - ./proxies.txt:/app/proxies.txt:ro
+    networks:
+      - kasyaf-net
+    restart: unless-stopped
+networks:
+  kasyaf-net:
+    external: true
+    name: kasyaf-net
