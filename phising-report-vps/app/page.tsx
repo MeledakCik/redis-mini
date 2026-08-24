@@ -34,7 +34,7 @@ export default function Page() {
         const res = await fetch(`/api/report/${provider}`, {
           method: "POST",
           headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({ url })
+          body: JSON.stringify({ urls: [url] })
         })
         const data = await res.json()
 
